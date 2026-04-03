@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2d5a1b">
+    <title>Froggy Hunt - Finde sie alle!</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="screen active">
+        <div class="splash-content">
+            <div class="splash-frog">🐸</div>
+            <h1 class="splash-title">FROGGY<br>HUNT</h1>
+            <p class="splash-subtitle">Finde sie alle! 🌿</p>
+            <div class="splash-loader">
+                <div class="splash-loader-bar"></div>
+            </div>
+            <p class="splash-loading-text">Lade...</p>
+        </div>
+    </div>
+
+    <!-- Main Menu -->
+    <div id="main-menu" class="screen">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="profile-section">
+                <div class="profile-avatar">🐸</div>
+                <div class="profile-info">
+                    <div class="profile-name" id="player-name">Froschfreund</div>
+                    <div class="profile-level">Level <span id="player-level">1</span></div>
+                    <div class="xp-bar">
+                        <div class="xp-bar-fill" id="xp-bar-fill"></div>
+                        <span class="xp-text" id="xp-text">0 / 100</span>
+                    </div>
+                </div>
+            </div>
+            <div class="top-bar-buttons">
+                <button class="icon-btn" id="btn-music" aria-label="Musik">🎵</button>
+                <button class="icon-btn" id="btn-sound" aria-label="Sound">🔊</button>
+                <button class="icon-btn" id="btn-settings-top" aria-label="Einstellungen">⚙️</button>
+            </div>
+        </div>
+
+        <!-- Logo -->
+        <div class="logo-section">
+            <h1 class="game-logo">FROGGY<br>HUNT</h1>
+            <p class="game-tagline">Finde sie alle! 🌿</p>
+        </div>
+
+        <!-- Current Level Card -->
+        <div class="current-level-card" id="current-level-card">
+            <div class="card-label">AKTUELLES LEVEL</div>
+            <div class="card-content">
+                <div class="card-preview" id="level-preview">🌳</div>
+                <div class="card-info">
+                    <h3 id="current-level-name">Waldlichtung</h3>
+                    <p><span id="current-level-frogs">5</span> 🐸 versteckte Froggys</p>
+                    <p>⏱️ Bestzeit: <span id="current-level-best">--:--</span></p>
+                </div>
+            </div>
+            <button class="btn-play-card" id="btn-continue">Weiter spielen →</button>
+        </div>
+
+        <!-- Menu Buttons -->
+        <div class="menu-buttons">
+            <button class="menu-btn btn-green" id="btn-play">
+                <span class="menu-btn-icon">🔍</span>
+                <span class="menu-btn-text">SPIELEN</span>
+            </button>
+            <button class="menu-btn btn-blue" id="btn-history">
+                <span class="menu-btn-icon">📖</span>
+                <span class="menu-btn-text">HISTORIE</span>
+            </button>
+            <button class="menu-btn btn-purple" id="btn-settings">
+                <span class="menu-btn-icon">⚙️</span>
+                <span class="menu-btn-text">EINSTELLUNGEN</span>
+            </button>
+            <button class="menu-btn btn-yellow" id="btn-info">
+                <span class="menu-btn-icon">ℹ️</span>
+                <span class="menu-btn-text">INFOS</span>
+            </button>
+        </div>
+
+        <!-- New Level Banner -->
+        <div class="new-level-banner">
+            <span class="banner-icon">📅</span>
+            <div class="banner-text">
+                <strong>NEUES LEVEL</strong><br>
+                Jeden Mittwoch! ⏰ <span id="countdown-timer">--T --h --m</span>
+            </div>
+        </div>
+
+        <!-- Community -->
+        <div class="community-banner">
+            Willkommen zur Froggy Hunt Community! ❤️
+        </div>
+    </div>
+
+    <!-- Level Select Screen -->
+    <div id="level-select" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" id="btn-back-levels">←</button>
+            <h2>Level auswählen</h2>
+            <div class="header-spacer"></div>
+        </div>
+        <div class="level-grid" id="level-grid">
+            <!-- Levels werden dynamisch generiert -->
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="game-header">
+            <button class="back-btn" id="btn-back-game">←</button>
+            <div class="game-info">
+                <div class="game-level-name" id="game-level-name">Waldlichtung</div>
+                <div class="game-stats">
+                    <span class="frog-counter">🐸 <span id="frogs-found">0</span>/<span id="frogs-total">5</span></span>
+                    <span class="game-timer">⏱️ <span id="game-timer">00:00</span></span>
+                </div>
+            </div>
+            <button class="icon-btn" id="btn-hint">💡</button>
+        </div>
+        <div class="game-area" id="game-area">
+            <div class="game-scene" id="game-scene">
+                <!-- Spielszene wird dynamisch generiert -->
+            </div>
+        </div>
+        <div class="game-footer">
+            <div class="hint-text" id="hint-text">Tippe auf versteckte Frösche!</div>
+        </div>
+    </div>
+
+    <!-- Level Complete Screen -->
+    <div id="level-complete" class="screen">
+        <div class="complete-overlay">
+            <div class="complete-card">
+                <div class="complete-stars" id="complete-stars">⭐⭐⭐</div>
+                <h2>Level geschafft!</h2>
+                <div class="complete-stats">
+                    <p>⏱️ Zeit: <span id="complete-time">00:00</span></p>
+                    <p>🐸 Frösche: <span id="complete-frogs">5/5</span></p>
+                    <p>💡 Hinweise: <span id="complete-hints">0</span></p>
+                    <p>⭐ XP: +<span id="complete-xp">0</span></p>
+                </div>
+                <div class="complete-buttons">
+                    <button class="btn-primary" id="btn-next-level">Nächstes Level →</button>
+                    <button class="btn-secondary" id="btn-replay">Nochmal spielen 🔄</button>
+                    <button class="btn-secondary" id="btn-back-menu">Zum Menü 🏠</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Screen -->
+    <div id="history-screen" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" id="btn-back-history">←</button>
+            <h2>📖 Historie</h2>
+            <div class="header-spacer"></div>
+        </div>
+        <div class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total-frogs">0</div>
+                <div class="stat-label">Frösche gefunden</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-levels-done">0</div>
+                <div class="stat-label">Level abgeschlossen</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total-time">00:00</div>
+                <div class="stat-label">Gesamtspielzeit</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total-stars">0</div>
+                <div class="stat-label">⭐ Sterne</div>
+            </div>
+        </div>
+        <h3 class="section-title">Abgeschlossene Level</h3>
+        <div class="history-list" id="history-list">
+            <p class="empty-state">Noch keine Level abgeschlossen. Spiel los! 🐸</p>
+        </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings-screen" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" id="btn-back-settings">←</button>
+            <h2>⚙️ Einstellungen</h2>
+            <div class="header-spacer"></div>
+        </div>
+        <div class="settings-list">
+            <div class="settings-group">
+                <h3>Audio</h3>
+                <div class="setting-row">
+                    <span>🎵 Musik</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-music" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span>🔊 Soundeffekte</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-sfx" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span>📳 Haptik</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-haptic" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="settings-group">
+                <h3>Gameplay</h3>
+                <div class="setting-row">
+                    <span>🌐 Sprache</span>
+                    <select id="setting-language" class="setting-select">
+                        <option value="de" selected>Deutsch</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <span>✨ Animationen reduzieren</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-reduce-motion">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="settings-group">
+                <h3>Konto</h3>
+                <div class="setting-row">
+                    <span>👤 Spielername</span>
+                    <input type="text" id="setting-name" class="setting-input" value="Froschfreund" maxlength="20">
+                </div>
+                <div class="setting-row">
+                    <button class="btn-danger" id="btn-reset-progress">Fortschritt zurücksetzen</button>
+                </div>
+            </div>
+            <div class="settings-group">
+                <h3>Datenschutz</h3>
+                <div class="setting-row">
+                    <span>📊 Analytics</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-analytics">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Screen -->
+    <div id="info-screen" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" id="btn-back-info">←</button>
+            <h2>ℹ️ Infos</h2>
+            <div class="header-spacer"></div>
+        </div>
+        <div class="info-content">
+            <div class="info-card">
+                <h3>🐸 Über Froggy Hunt</h3>
+                <p>Froggy Hunt ist ein lustiges Suchspiel, bei dem du versteckte Frösche in wunderschönen Naturszenen finden musst. Jedes Level bietet neue Herausforderungen und Umgebungen!</p>
+            </div>
+            <div class="info-card">
+                <h3>🎮 So geht's</h3>
+                <ul>
+                    <li>Tippe auf versteckte Frösche in der Szene</li>
+                    <li>Finde alle Frösche so schnell wie möglich</li>
+                    <li>Nutze Hinweise wenn du nicht weiterkommst</li>
+                    <li>Verdiene Sterne für schnelle Zeiten</li>
+                    <li>Steige im Level auf und schalte neue Welten frei</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>⭐ Bewertung</h3>
+                <ul>
+                    <li>⭐⭐⭐ 3 Sterne: Ohne Hinweise, unter Zielzeit</li>
+                    <li>⭐⭐ 2 Sterne: Unter Zielzeit oder ohne Hinweise</li>
+                    <li>⭐ 1 Stern: Level abgeschlossen</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>📋 Rechtliches</h3>
+                <p><a href="#">Datenschutzerklärung</a></p>
+                <p><a href="#">Allgemeine Geschäftsbedingungen</a></p>
+                <p><a href="#">Impressum</a></p>
+                <p><a href="#">Open-Source-Lizenzen</a></p>
+            </div>
+            <div class="info-card">
+                <h3>📧 Kontakt & Support</h3>
+                <p>Probleme oder Feedback? Schreib uns!</p>
+                <p>support@froggyhunt.example.com</p>
+            </div>
+            <div class="info-version">
+                Version 1.0.0 | © 2026 Froggy Hunt
+            </div>
+        </div>
+    </div>
+
+    <script src="js/levels.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
