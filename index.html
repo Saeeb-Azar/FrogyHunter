@@ -1,594 +1,317 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Frog Hunt 🐸 – Knuffi Edition</title>
-<meta name="theme-color" content="#8be08b">
-<style>
-  :root{
-    /* Nintendo-knuffi Pastell */
-    --bg:#f7fbff;
-    --ui1:#ffffff; --ui2:#f2f7ff; --line:#d7e4f2;
-    --txt:#2b2b2b; --dim:#637089;
-    --green:#8be08b; --green2:#66d466;
-    --blue:#8fd7ff; --blue2:#67c3ff;
-    --pink:#ffc2da; --gold:#ffd76a; --lav:#d9c8ff;
-    --shadow:0 10px 30px rgba(85,125,175,.15);
-    --vh:100vh;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%; margin:0; background:
-    radial-gradient(900px 600px at 20% -10%, #e8f3ff 0%, #f7fbff 50%, #f9fdff 100%);
-    color:var(--txt); font-family: ui-rounded, system-ui, "SF Pro Rounded", "Segoe UI", Roboto, Arial, sans-serif;
-  }
-
-  /* App Frame */
-  .game{position:fixed; inset:0; display:grid; grid-template-rows:auto 1fr; height:var(--vh); overflow:hidden}
-  header{
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-    padding:10px 14px; background:linear-gradient(180deg,#ffffff,#f6fbff);
-    border-bottom:1px solid var(--line); box-shadow: var(--shadow);
-  }
-  .brand{display:flex; align-items:center; gap:10px; font-weight:1000; letter-spacing:.2px}
-  .brand i{width:40px; height:40px; display:grid; place-items:center; border-radius:12px; background:#e9f7ff; box-shadow: inset 0 -2px 0 rgba(0,0,0,.05)}
-  .hud{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
-  .chip{
-    display:inline-flex; align-items:center; gap:8px;
-    padding:8px 12px; border-radius:999px; font-weight:900;
-    background:#fff; border:1px solid var(--line); box-shadow: var(--shadow); color:#3a465a;
-  }
-  .chip .ico{font-size:16px}
-  .btn{
-    appearance:none; cursor:pointer; user-select:none;
-    display:inline-flex; align-items:center; justify-content:center; gap:10px;
-    padding:16px 20px; border-radius:999px; border:2px solid transparent;
-    color:#173a24; font-weight:1000; letter-spacing:.2px; box-shadow: var(--shadow);
-    transition:transform .06s ease, filter .2s ease, box-shadow .2s ease;
-  }
-  .btn:active{transform:translateY(1px) scale(.99)}
-  .btn--green{background:linear-gradient(180deg,var(--green),var(--green2));}
-  .btn--blue{background:linear-gradient(180deg,var(--blue),var(--blue2)); color:#08314a}
-  .btn--white{background:#fff; border-color:var(--line); color:#334257}
-  .btn--wide{width:100%}
-  .btn--huge{font-size:18px; padding:20px 24px}
-
-  /* Stage */
-  .stage{position:relative; margin:14px; border-radius:26px; overflow:hidden; background:#eaf6ff; border:1px solid var(--line); min-height:340px; box-shadow: var(--shadow)}
-  .stage__bg{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; user-select:none; pointer-events:none}
-  .progress{position:absolute; left:12px; right:12px; bottom:12px; height:12px; background:#ffffffaa; border:1px solid var(--line); border-radius:99px; overflow:hidden}
-  .progress>i{display:block; height:100%; width:0%; background:linear-gradient(90deg,#8be08b,#67c3ff)}
-
-  /* Frog */
-  .frog{
-    position:absolute; cursor:pointer; user-select:none; -webkit-user-drag:none;
-    filter: drop-shadow(0 3px 0 rgba(0,0,0,.08));
-    mix-blend-mode:multiply; opacity:.9;
-    transition:transform .18s cubic-bezier(.2,.9,.2,1), opacity .18s, filter .2s
-  }
-  .frog:hover{transform:scale(1.07)}
-  .frog.found{animation:pop .28s ease forwards; pointer-events:none}
-  @keyframes pop{0%{transform:scale(1)} 50%{transform:scale(1.25)} 100%{transform:scale(.55) rotate(-8deg); opacity:0}}
-  .hit{position:absolute; border:3px solid rgba(0,0,0,.18); border-radius:50%; width:12px; height:12px; transform:translate(-50%,-50%); pointer-events:none; animation:rip .5s ease-out forwards}
-  @keyframes rip{to{opacity:0; width:60px; height:60px}}
-
-  /* Overlays */
-  .overlay{position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(245,249,255,.75); backdrop-filter: blur(8px)}
-  .overlay[aria-hidden="false"]{display:flex}
-  .card{
-    width:min(1000px,96vw);
-    background:
-      radial-gradient(900px 400px at 10% -30%, rgba(139,224,139,.25), transparent 60%),
-      radial-gradient(900px 400px at 110% 130%, rgba(143,215,255,.25), transparent 60%),
-      linear-gradient(180deg,#ffffff,#f6fbff);
-    border:1px solid var(--line); border-radius:28px; padding:22px; box-shadow: var(--shadow); color:#2b2b2b;
-  }
-  .title{font-size:28px; font-weight:1000; letter-spacing:.3px; display:flex; align-items:center; gap:10px}
-  .subtitle{color:var(--dim); margin-top:6px}
-
-  /* Lobby */
-  .lobby{display:grid; grid-template-columns:1fr 280px; gap:16px}
-  @media (max-width:840px){ .lobby{grid-template-columns:1fr} }
-  .panel{background:#fff; border:1px solid var(--line); border-radius:22px; padding:14px; box-shadow: var(--shadow)}
-  .resources{display:flex; gap:10px; flex-wrap:wrap}
-  .res{
-    flex:1; min-width:140px; display:flex; align-items:center; gap:10px;
-    padding:12px; border-radius:16px; border:1px solid var(--line); background:#fff; box-shadow: var(--shadow)
-  }
-  .res .ico{font-size:20px}
-  .res--coin{background:linear-gradient(180deg,#fff8e0,#fff); }
-  .res--heart{background:linear-gradient(180deg,#ffe7ef,#fff);}
-  .res--gem{background:linear-gradient(180deg,#f1ecff,#fff);}
-
-  .ctaRow{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px}
-  @media (max-width:600px){ .ctaRow{grid-template-columns:1fr} }
-
-  .daily{display:grid; grid-template-columns:64px 1fr auto; gap:12px; align-items:center}
-  .badge{
-    width:64px; height:64px; border-radius:16px; display:grid; place-items:center;
-    background:conic-gradient(from 210deg,#fff3bf,#ffd76a,#fff3bf);
-    box-shadow: var(--shadow)
-  }
-  .pill{display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:999px; font-weight:900; border:2px solid #e6eef7; background:#fff; box-shadow: var(--shadow)}
-  .pill--green{background:linear-gradient(180deg,#9af0a3,#6fe68a); color:#0a3a1c; border-color:transparent}
-
-  /* Level & Diff */
-  .lvlgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
-  @media (max-width:520px){ .lvlgrid{grid-template-columns:repeat(2,1fr)} }
-  .lvl{position:relative; background:#fff; border:1px solid var(--line); border-radius:18px; overflow:hidden; aspect-ratio:1.35; display:grid; place-items:center; cursor:pointer; box-shadow: var(--shadow)}
-  .lvl input{display:none}
-  .lvl img{width:100%; height:100%; object-fit:cover}
-  .lvl .label{position:absolute; left:8px; top:8px; font-size:12px; background:#fff; border:1px solid var(--line); padding:4px 6px; border-radius:999px; box-shadow: var(--shadow)}
-  .lvl:has(input:checked){outline:4px solid #8be08b}
-
-  .diffs{display:flex; gap:12px; flex-wrap:wrap; margin-top:6px}
-  .pillDiff{flex:1; min-width:140px; text-align:center; padding:14px 14px; border-radius:999px; border:2px solid #e6eef7; background:#fff; cursor:pointer; font-weight:1000; font-size:16px; box-shadow: var(--shadow)}
-  .pillDiff[data-active="true"]{background:linear-gradient(180deg,#9af0a3,#6fe68a); color:#0a3a1c; border-color:transparent}
-
-  /* Mascot */
-  .hero{display:flex; align-items:center; gap:14px}
-  .mascot{width:72px; height:72px}
-  .hop{animation:hop 1.4s ease-in-out infinite; transform-origin:50% 80%}
-  @keyframes hop{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
-
-  /* Loader dots */
-  .loaderDots{display:flex; gap:10px; align-items:center; font-weight:800; justify-content:center; margin-top:10px}
-  .dot{width:10px;height:10px;border-radius:50%;background:#a7c7ff;animation:blink 1s infinite ease-in-out}
-  .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
-  @keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
-
-  /* Safe-area */
-  @supports(padding: max(0px)) {
-    header{padding-left:max(10px, env(safe-area-inset-left)); padding-right:max(10px, env(safe-area-inset-right))}
-    .stage{margin:14px max(14px, env(safe-area-inset-right)) 14px max(14px, env(safe-area-inset-left))}
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2d5a1b">
+    <title>Froggy Hunt - Finde sie alle!</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="game" id="game">
-  <header>
-    <div class="brand">
-      <i><!-- inline SVG frog head -->
-        <svg class="mascot hop" viewBox="0 0 64 64" aria-hidden="true">
-          <defs>
-            <radialGradient id="g" cx="50%" cy="40%" r="70%"><stop offset="0%" stop-color="#9df59d"/><stop offset="100%" stop-color="#69d769"/></radialGradient>
-          </defs>
-          <circle cx="32" cy="34" r="22" fill="url(#g)"/>
-          <circle cx="21" cy="20" r="9" fill="#9df59d"/><circle cx="43" cy="20" r="9" fill="#9df59d"/>
-          <circle cx="21" cy="20" r="4.5" fill="#fff"/><circle cx="43" cy="20" r="4.5" fill="#fff"/>
-          <circle cx="21" cy="20" r="2" fill="#333"/><circle cx="43" cy="20" r="2" fill="#333"/>
-          <path d="M20 36q12 10 24 0" stroke="#2a8a2a" stroke-width="3" fill="none" stroke-linecap="round"/>
-        </svg>
-      </i>
-      Frog Hunt
-    </div>
-    <div class="hud">
-      <span class="chip"><span class="ico">❤️</span><strong id="lives">—</strong></span>
-      <span class="chip"><span class="ico">⭐</span><strong id="score">0</strong> <span id="mult" style="margin-left:6px;padding:3px 10px;border-radius:999px;background:#fff;border:1px solid var(--line)">x1</span></span>
-      <span class="chip"><span class="ico">⏱️</span><strong id="time">00:00</strong></span>
-      <span class="chip"><span class="ico">🐸</span><strong id="left">—</strong></span>
-      <button class="btn btn--white" id="pauseOpen">☰ Menü</button>
-      <button class="btn btn--white" id="muteToggle" aria-pressed="false">🔈 Sound</button>
-    </div>
-  </header>
-
-  <main class="stage" id="stage">
-    <img id="bg" class="stage__bg" alt="Hintergrund" />
-    <div class="progress"><i id="progressBar"></i></div>
-  </main>
-</div>
-
-<!-- LOBBY -->
-<div class="overlay" id="lobby" aria-hidden="false">
-  <div class="card">
-    <div class="lobby">
-      <div>
-        <div class="title">
-          <svg class="mascot hop" viewBox="0 0 64 64" aria-hidden="true">
-            <defs><radialGradient id="g2" cx="50%" cy="40%" r="70%"><stop offset="0%" stop-color="#a6f6a6"/><stop offset="100%" stop-color="#7fe07f"/></radialGradient></defs>
-            <circle cx="32" cy="34" r="22" fill="url(#g2)"/>
-            <circle cx="21" cy="20" r="9" fill="#a6f6a6"/><circle cx="43" cy="20" r="9" fill="#a6f6a6"/>
-            <circle cx="21" cy="20" r="4.5" fill="#fff"/><circle cx="43" cy="20" r="4.5" fill="#fff"/>
-            <circle cx="21" cy="20" r="2" fill="#333"/><circle cx="43" cy="20" r="2" fill="#333"/>
-            <path d="M20 36q12 10 24 0" stroke="#2a8a2a" stroke-width="3" fill="none" stroke-linecap="round"/>
-          </svg>
-          Willkommen in der Frog-Lobby
-        </div>
-        <div class="subtitle">Starte sofort oder stell dir dein Level zusammen. Alles in knuffig 💚</div>
-
-        <div class="panel" style="margin-top:12px">
-          <div class="resources">
-            <div class="res res--coin"><span class="ico">🪙</span><div><div style="font-weight:900">Coins</div><div id="coins">250</div></div></div>
-            <div class="res res--heart"><span class="ico">❤️</span><div><div style="font-weight:900">Leben</div><div id="lifeCount">3</div></div></div>
-            <div class="res res--gem"><span class="ico">💎</span><div><div style="font-weight:900">Gems</div><div id="gems">12</div></div></div>
-          </div>
-          <div class="ctaRow">
-            <button class="btn btn--green btn--huge btn--wide" id="quickPlay">▶ Sofort spielen</button>
-            <button class="btn btn--blue  btn--huge btn--wide" id="toLevel">🎒 Level wählen</button>
-          </div>
-        </div>
-
-        <div class="panel" style="margin-top:12px">
-          <div class="daily">
-            <div class="badge">🎁</div>
-            <div>
-              <div style="font-weight:1000">Tägliche Belohnung</div>
-              <div class="subtitle">Hol dir Münzen & Gems – jeden Tag!</div>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="screen active">
+        <div class="splash-content">
+            <div class="splash-frog">🐸</div>
+            <h1 class="splash-title">FROGGY<br>HUNT</h1>
+            <p class="splash-subtitle">Finde sie alle! 🌿</p>
+            <div class="splash-loader">
+                <div class="splash-loader-bar"></div>
             </div>
-            <div class="pill pill--green">Abholen</div>
-          </div>
+            <p class="splash-loading-text">Lade...</p>
         </div>
-      </div>
+    </div>
 
-      <div>
-        <div class="panel">
-          <div style="font-weight:1000; margin-bottom:8px">Tipps</div>
-          <ul style="margin:0 0 8px 18px; padding:0">
-            <li>„Mittel“ = faire Tarnung, gute Größe.</li>
-            <li>„Schwer“ blendet 50% des Froschs weich aus.</li>
-            <li>Kombo schnell klicken → Multiplikator!</li>
-          </ul>
-          <div class="pill" style="margin-top:6px">⛶ Tipp: Vollbild für beste Sicht</div>
+    <!-- Main Menu -->
+    <div id="main-menu" class="screen">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="profile-section">
+                <div class="profile-avatar">🐸</div>
+                <div class="profile-info">
+                    <div class="profile-name" id="player-name">Froschfreund</div>
+                    <div class="profile-level">Level <span id="player-level">1</span></div>
+                    <div class="xp-bar">
+                        <div class="xp-bar-fill" id="xp-bar-fill"></div>
+                        <span class="xp-text" id="xp-text">0 / 100</span>
+                    </div>
+                </div>
+            </div>
+            <div class="top-bar-buttons">
+                <button class="icon-btn" id="btn-music" aria-label="Musik">🎵</button>
+                <button class="icon-btn" id="btn-sound" aria-label="Sound">🔊</button>
+                <button class="icon-btn" id="btn-settings-top" aria-label="Einstellungen">⚙️</button>
+            </div>
         </div>
-      </div>
+
+        <!-- Logo -->
+        <div class="logo-section">
+            <h1 class="game-logo">FROGGY<br>HUNT</h1>
+            <p class="game-tagline">Finde sie alle! 🌿</p>
+        </div>
+
+        <!-- Current Level Card -->
+        <div class="current-level-card" id="current-level-card">
+            <div class="card-label">AKTUELLES LEVEL</div>
+            <div class="card-content">
+                <div class="card-preview" id="level-preview">🌳</div>
+                <div class="card-info">
+                    <h3 id="current-level-name">Waldlichtung</h3>
+                    <p><span id="current-level-frogs">5</span> 🐸 versteckte Froggys</p>
+                    <p>⏱️ Bestzeit: <span id="current-level-best">--:--</span></p>
+                </div>
+            </div>
+            <button class="btn-play-card" id="btn-continue">Weiter spielen →</button>
+        </div>
+
+        <!-- Menu Buttons -->
+        <div class="menu-buttons">
+            <button class="menu-btn btn-green" id="btn-play">
+                <span class="menu-btn-icon">🔍</span>
+                <span class="menu-btn-text">SPIELEN</span>
+            </button>
+            <button class="menu-btn btn-blue" id="btn-history">
+                <span class="menu-btn-icon">📖</span>
+                <span class="menu-btn-text">HISTORIE</span>
+            </button>
+            <button class="menu-btn btn-purple" id="btn-settings">
+                <span class="menu-btn-icon">⚙️</span>
+                <span class="menu-btn-text">EINSTELLUNGEN</span>
+            </button>
+            <button class="menu-btn btn-yellow" id="btn-info">
+                <span class="menu-btn-icon">ℹ️</span>
+                <span class="menu-btn-text">INFOS</span>
+            </button>
+        </div>
+
+        <!-- New Level Banner -->
+        <div class="new-level-banner">
+            <span class="banner-icon">📅</span>
+            <div class="banner-text">
+                <strong>NEUES LEVEL</strong><br>
+                Jeden Mittwoch! ⏰ <span id="countdown-timer">--T --h --m</span>
+            </div>
+        </div>
+
+        <!-- Community -->
+        <div class="community-banner">
+            Willkommen zur Froggy Hunt Community! ❤️
+        </div>
     </div>
-  </div>
-</div>
 
-<!-- Loader -->
-<div class="overlay" id="loader" aria-hidden="true">
-  <div class="card" style="max-width:420px;text-align:center">
-    <div class="title">Bereite Level vor…</div>
-    <div class="subtitle">Analysiere Bild für Tarnung & Verteilung</div>
-    <div class="loaderDots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-  </div>
-</div>
-
-<!-- Level-Auswahl -->
-<div class="overlay" id="levels" aria-hidden="true">
-  <div class="card">
-    <div class="title">Level auswählen</div>
-    <div class="subtitle">Nimm eine Szene – oder lade dein Foto</div>
-    <div class="lvlgrid">
-      <label class="lvl">
-        <input type="radio" name="bgselect" value="sample:forest">
-        <span class="label">Wiese (Sample)</span>
-        <img id="thumbForest" alt="">
-      </label>
-      <label class="lvl">
-        <input type="radio" name="bgselect" value="sample:leaves">
-        <span class="label">Laub (Sample)</span>
-        <img id="thumbLeaves" alt="">
-      </label>
-      <label class="lvl">
-        <input type="radio" name="bgselect" value="sample:stones">
-        <span class="label">Steine (Sample)</span>
-        <img id="thumbStones" alt="">
-      </label>
-      <label class="lvl" id="photoSlot">
-        <input type="radio" name="bgselect" value="photo">
-        <span class="label">📷 Eigenes Foto</span>
-        <img id="photoThumb" alt="">
-      </label>
+    <!-- Level Select Screen -->
+    <div id="level-select" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" id="btn-back-levels">←</button>
+            <h2>Level auswählen</h2>
+            <div class="header-spacer"></div>
+        </div>
+        <div class="level-grid" id="level-grid">
+            <!-- Levels werden dynamisch generiert -->
+        </div>
     </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px">
-      <button class="btn btn--white btn--wide" id="pickPhoto">📁 Bild wählen</button>
-      <input id="bgInput" type="file" accept="image/*" style="display:none">
-      <button class="btn btn--green btn--wide" id="toDiff">Weiter</button>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="game-header">
+            <button class="back-btn" id="btn-back-game">←</button>
+            <div class="game-info">
+                <div class="game-level-name" id="game-level-name">Waldlichtung</div>
+                <div class="game-stats">
+                    <span class="frog-counter">🐸 <span id="frogs-found">0</span>/<span id="frogs-total">5</span></span>
+                    <span class="game-timer">⏱️ <span id="game-timer">00:00</span></span>
+                </div>
+            </div>
+            <button class="icon-btn" id="btn-hint">💡</button>
+        </div>
+        <div class="game-area" id="game-area">
+            <div class="game-scene" id="game-scene">
+                <!-- Spielszene wird dynamisch generiert -->
+            </div>
+        </div>
+        <div class="game-footer">
+            <div class="hint-text" id="hint-text">Tippe auf versteckte Frösche!</div>
+        </div>
     </div>
-  </div>
-</div>
 
-<!-- Schwierigkeit -->
-<div class="overlay" id="diffSel" aria-hidden="true">
-  <div class="card">
-    <div class="title">Schwierigkeitsgrad</div>
-    <div class="subtitle">Tarnung & Größe</div>
-    <div class="diffs" id="diffs">
-      <button class="pillDiff" data-diff="easy">Einfach</button>
-      <button class="pillDiff" data-diff="mid">Mittel</button>
-      <button class="pillDiff" data-diff="hard">Schwer</button>
+    <!-- Level Complete Screen -->
+    <div id="level-complete" class="screen">
+        <div class="complete-overlay">
+            <div class="complete-card">
+                <div class="complete-stars" id="complete-stars">⭐⭐⭐</div>
+                <h2>Level geschafft!</h2>
+                <div class="complete-stats">
+                    <p>⏱️ Zeit: <span id="complete-time">00:00</span></p>
+                    <p>🐸 Frösche: <span id="complete-frogs">5/5</span></p>
+                    <p>💡 Hinweise: <span id="complete-hints">0</span></p>
+                    <p>⭐ XP: +<span id="complete-xp">0</span></p>
+                </div>
+                <div class="complete-buttons">
+                    <button class="btn-primary" id="btn-next-level">Nächstes Level →</button>
+                    <button class="btn-secondary" id="btn-replay">Nochmal spielen 🔄</button>
+                    <button class="btn-secondary" id="btn-back-menu">Zum Menü 🏠</button>
+                </div>
+            </div>
+        </div>
     </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px">
-      <button class="btn btn--white btn--wide" id="backLevels">Zurück</button>
-      <button class="btn btn--green btn--wide" id="startGame">Start</button>
+
+    <!-- History Screen -->
+    <div id="history-screen" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" id="btn-back-history">←</button>
+            <h2>📖 Historie</h2>
+            <div class="header-spacer"></div>
+        </div>
+        <div class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total-frogs">0</div>
+                <div class="stat-label">Frösche gefunden</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-levels-done">0</div>
+                <div class="stat-label">Level abgeschlossen</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total-time">00:00</div>
+                <div class="stat-label">Gesamtspielzeit</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total-stars">0</div>
+                <div class="stat-label">⭐ Sterne</div>
+            </div>
+        </div>
+        <h3 class="section-title">Abgeschlossene Level</h3>
+        <div class="history-list" id="history-list">
+            <p class="empty-state">Noch keine Level abgeschlossen. Spiel los! 🐸</p>
+        </div>
     </div>
-  </div>
-</div>
 
-<!-- Pause -->
-<div class="overlay" id="pause" aria-hidden="true">
-  <div class="card" style="max-width:420px">
-    <div class="title">Menü</div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px">
-      <button class="btn btn--green btn--wide" id="resume">Weiter spielen</button>
-      <button class="btn btn--white btn--wide" id="menuLevels">Level wählen</button>
+    <!-- Settings Screen -->
+    <div id="settings-screen" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" id="btn-back-settings">←</button>
+            <h2>⚙️ Einstellungen</h2>
+            <div class="header-spacer"></div>
+        </div>
+        <div class="settings-list">
+            <div class="settings-group">
+                <h3>Audio</h3>
+                <div class="setting-row">
+                    <span>🎵 Musik</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-music" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span>🔊 Soundeffekte</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-sfx" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span>📳 Haptik</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-haptic" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="settings-group">
+                <h3>Gameplay</h3>
+                <div class="setting-row">
+                    <span>🌐 Sprache</span>
+                    <select id="setting-language" class="setting-select">
+                        <option value="de" selected>Deutsch</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <span>✨ Animationen reduzieren</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-reduce-motion">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="settings-group">
+                <h3>Konto</h3>
+                <div class="setting-row">
+                    <span>👤 Spielername</span>
+                    <input type="text" id="setting-name" class="setting-input" value="Froschfreund" maxlength="20">
+                </div>
+                <div class="setting-row">
+                    <button class="btn-danger" id="btn-reset-progress">Fortschritt zurücksetzen</button>
+                </div>
+            </div>
+            <div class="settings-group">
+                <h3>Datenschutz</h3>
+                <div class="setting-row">
+                    <span>📊 Analytics</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-analytics">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<!-- Summary -->
-<div class="overlay" id="summary" aria-hidden="true">
-  <div class="card">
-    <div class="title">Level geschafft! 🎉</div>
-    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:8px">
-      <div><strong>Level</strong><div id="sumLevel">–</div></div>
-      <div><strong>Zeit</strong><div id="sumTime">–</div></div>
-      <div><strong>Punkte</strong><div id="sumScore">–</div></div>
-      <div><strong>Genauigkeit</strong><div id="sumAcc">–</div></div>
+    <!-- Info Screen -->
+    <div id="info-screen" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" id="btn-back-info">←</button>
+            <h2>ℹ️ Infos</h2>
+            <div class="header-spacer"></div>
+        </div>
+        <div class="info-content">
+            <div class="info-card">
+                <h3>🐸 Über Froggy Hunt</h3>
+                <p>Froggy Hunt ist ein lustiges Suchspiel, bei dem du versteckte Frösche in wunderschönen Naturszenen finden musst. Jedes Level bietet neue Herausforderungen und Umgebungen!</p>
+            </div>
+            <div class="info-card">
+                <h3>🎮 So geht's</h3>
+                <ul>
+                    <li>Tippe auf versteckte Frösche in der Szene</li>
+                    <li>Finde alle Frösche so schnell wie möglich</li>
+                    <li>Nutze Hinweise wenn du nicht weiterkommst</li>
+                    <li>Verdiene Sterne für schnelle Zeiten</li>
+                    <li>Steige im Level auf und schalte neue Welten frei</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>⭐ Bewertung</h3>
+                <ul>
+                    <li>⭐⭐⭐ 3 Sterne: Ohne Hinweise, unter Zielzeit</li>
+                    <li>⭐⭐ 2 Sterne: Unter Zielzeit oder ohne Hinweise</li>
+                    <li>⭐ 1 Stern: Level abgeschlossen</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>📋 Rechtliches</h3>
+                <p><a href="#">Datenschutzerklärung</a></p>
+                <p><a href="#">Allgemeine Geschäftsbedingungen</a></p>
+                <p><a href="#">Impressum</a></p>
+                <p><a href="#">Open-Source-Lizenzen</a></p>
+            </div>
+            <div class="info-card">
+                <h3>📧 Kontakt & Support</h3>
+                <p>Probleme oder Feedback? Schreib uns!</p>
+                <p>support@froggyhunt.example.com</p>
+            </div>
+            <div class="info-version">
+                Version 1.0.0 | © 2026 Froggy Hunt
+            </div>
+        </div>
     </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px">
-      <button class="btn btn--green btn--wide" id="nextLevel">Nächstes Level</button>
-      <button class="btn btn--white btn--wide" id="toMenu">Lobby</button>
-    </div>
-  </div>
-</div>
 
-<script>
-(()=> {
-  /* ==== viewport fix ==== */
-  function setVH(){ document.documentElement.style.setProperty('--vh', window.innerHeight + 'px'); }
-  setVH(); addEventListener('resize', setVH);
-
-  const $  = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
-
-  const el = {
-    stage: $('#stage'), bg: $('#bg'), bar: $('#progressBar'),
-    lives: $('#lives'), score: $('#score'), mult: $('#mult'), time: $('#time'), left: $('#left'),
-    lobby: $('#lobby'), loader: $('#loader'), levels: $('#levels'), diffSel: $('#diffSel'),
-    pause: $('#pause'), summary: $('#summary'),
-    quickPlay: $('#quickPlay'), toLevel: $('#toLevel'), toDiff: $('#toDiff'),
-    startGame: $('#startGame'), backLevels: $('#backLevels'),
-    nextLevel: $('#nextLevel'), toMenu: $('#toMenu'),
-    pauseOpen: $('#pauseOpen'), resume: $('#resume'), menuLevels: $('#menuLevels'),
-    pickPhoto: $('#pickPhoto'), bgInput: $('#bgInput'),
-    photoThumb: $('#photoThumb'),
-    thumbForest: $('#thumbForest'), thumbLeaves: $('#thumbLeaves'), thumbStones: $('#thumbStones'),
-    muteToggle: $('#muteToggle')
-  };
-
-  /* ==== audio (cute beeps) with mute ==== */
-  const AC = (window.AudioContext||window.webkitAudioContext) ? new (window.AudioContext||window.webkitAudioContext)() : null;
-  let MUTED = false;
-  function beep(f=720,d=.07,t='square',v=.03){
-    if(!AC || MUTED) return;
-    const o=AC.createOscillator(), g=AC.createGain();
-    o.type=t; o.frequency.value=f; g.gain.value=v;
-    o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+d);
-  }
-  el.muteToggle.addEventListener('click', ()=>{
-    MUTED = !MUTED;
-    el.muteToggle.setAttribute('aria-pressed', String(MUTED));
-    el.muteToggle.textContent = MUTED ? '🔇 Sound aus' : '🔈 Sound';
-  });
-
-  /* ==== state ==== */
-  const LEVELS=[
-    {count:[3,4], scale:[0.72,0.98], time:35},
-    {count:[6,8], scale:[0.54,0.80], time:40},
-    {count:[9,12], scale:[0.44,0.68], time:45},
-    {count:[13,16], scale:[0.36,0.58], time:50},
-    {count:[17,22], scale:[0.30,0.52], time:55},
-  ];
-  const S={running:false,levelIdx:0,lives:3,score:0,clicks:0,hits:0,levelTime:0,timeLeft:0,comboTime:0,multiplier:1,toFind:0,diff:'mid',frogSrc:null,off:document.createElement('canvas'),busyMap:null,bgImage:null};
-  const ctx=S.off.getContext('2d',{willReadFrequently:true});
-
-  /* ==== utils ==== */
-  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-  const rand=(a,b)=>Math.random()*(b-a)+a;
-  const randi=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
-  const fmt=s=>{s=Math.max(0,Math.floor(s));const m=String(Math.floor(s/60)).padStart(2,'0');const ss=String(s%60).padStart(2,'0');return `${m}:${ss}`;};
-  function setHUD(){ el.lives.textContent='❤'.repeat(S.lives)||'—'; el.score.textContent=S.score; el.mult.textContent='x'+S.multiplier; el.left.textContent=S.toFind??'—'; el.time.textContent=fmt(S.timeLeft); }
-
-  /* ==== timers ==== */
-  let tick=null; function startTick(){ clearInterval(tick); tick=setInterval(()=>{ if(!S.running) return; S.timeLeft-=.25; el.time.textContent=fmt(S.timeLeft); el.bar.style.width=`${(1-(S.timeLeft/S.levelTime))*100}%`; if(S.timeLeft<=0) loseLife(); },250); }
-  function stopTick(){ clearInterval(tick); }
-
-  /* ==== knuffi Sample-BGs (Canvas Pastell-Muster) ==== */
-  function makePattern(type,w,h){
-    const c=document.createElement('canvas'); c.width=w; c.height=h; const k=c.getContext('2d');
-    // Soft gradient
-    const g=k.createLinearGradient(0,0,w,h);
-    if(type==='forest'){ g.addColorStop(0,'#dffbe1'); g.addColorStop(1,'#c7f0c9'); }
-    if(type==='leaves'){ g.addColorStop(0,'#e3ffe9'); g.addColorStop(1,'#d1f6db'); }
-    if(type==='stones'){ g.addColorStop(0,'#e9f0ff'); g.addColorStop(1,'#dae6ff'); }
-    k.fillStyle=g; k.fillRect(0,0,w,h);
-    // Bubbly dots
-    for(let i=0;i<140;i++){
-      const x=Math.random()*w, y=Math.random()*h, r=Math.random()*50+20;
-      k.beginPath(); k.arc(x,y,r,0,Math.PI*2);
-      if(type==='forest') k.fillStyle=`rgba(140,233,154,${Math.random()*.18})`;
-      if(type==='leaves') k.fillStyle=`rgba(173,242,191,${Math.random()*.18})`;
-      if(type==='stones') k.fillStyle=`rgba(180,197,255,${Math.random()*.16})`;
-      k.fill();
-    }
-    // gentle cloud swirls
-    k.globalAlpha=0.35; k.fillStyle="#fff";
-    for(let i=0;i<30;i++){ k.beginPath(); k.ellipse(Math.random()*w,Math.random()*h,Math.random()*120+40,Math.random()*50+20,Math.random()*Math.PI,0,Math.PI*2); k.fill(); }
-    return c.toDataURL();
-  }
-  const samples = {
-    'sample:forest': makePattern('forest', 1200, 800),
-    'sample:leaves': makePattern('leaves', 1200, 800),
-    'sample:stones': makePattern('stones', 1200, 800)
-  };
-  // Thumbs anzeigen
-  $('#thumbForest').src = samples['sample:forest'];
-  $('#thumbLeaves').src = samples['sample:leaves'];
-  $('#thumbStones').src = samples['sample:stones'];
-  let selectedBG=null;
-
-  function showLoader(show){ el.loader.setAttribute('aria-hidden', show?'false':'true'); }
-
-  function loadBG(src,cb){
-    showLoader(true);
-    const img=new Image();
-    img.onload=()=>{
-      S.bgImage=img; el.bg.src=src;
-      const sw=el.stage.clientWidth, sh=el.stage.clientHeight;
-      S.off.width=sw; S.off.height=sh;
-      // cover draw
-      const ir=img.width/img.height, sr=sw/sh;
-      let dw=sw, dh=sh, dx=0, dy=0;
-      if(ir>sr){ dh=sh; dw=dh*ir; dx=(sw-dw)/2; } else { dw=sw; dh=dw/ir; dy=(sh-dh)/2; }
-      ctx.clearRect(0,0,sw,sh); ctx.drawImage(img,dx,dy,dw,dh);
-      buildAnalysis(); showLoader(false); cb&&cb();
-    };
-    img.src=src;
-  }
-
-  function buildAnalysis(){
-    const w=S.off.width,h=S.off.height; const d=ctx.getImageData(0,0,w,h).data;
-    const busy=new Float32Array(w*h); const lum=new Float32Array(w*h);
-    for(let i=0,j=0;i<w*h;i++,j+=4) lum[i]=0.2126*d[j]+0.7152*d[j+1]+0.0722*d[j+2];
-    const g=(x,y)=>lum[y*w+x]||0;
-    for(let y=1;y<h-1;y++){ for(let x=1;x<w-1;x++){
-      const gx=-g(x-1,y-1)-2*g(x-1,y)+-g(x-1,y+1)+ g(x+1,y-1)+2*g(x+1,y)+g(x+1,y+1);
-      const gy=-g(x-1,y-1)-2*g(x,y-1)-g(x+1,y-1)+ g(x-1,y+1)+2*g(x,y+1)+g(x+1,y+1);
-      busy[y*w+x]=Math.sqrt(gx*gx+gy*gy);
-    }}
-    let m=1; for(const v of busy) if(v>m) m=v; for(let i=0;i<busy.length;i++) busy[i]/=m;
-    S.busyMap={data:busy,w,h};
-  }
-
-  function sampleAvg(x,y,w,h){
-    const W=S.off.width,H=S.off.height,img=ctx.getImageData(0,0,W,H).data;
-    const sx=Math.max(0,Math.floor(x)), sy=Math.max(0,Math.floor(y)), ex=Math.min(W,Math.floor(x+w)), ey=Math.min(H,Math.floor(y+h));
-    const stepX=Math.max(1,Math.floor((ex-sx)/6)), stepY=Math.max(1,Math.floor((ey-sy)/6));
-    let r=0,g=0,b=0,c=0; for(let yy=sy;yy<ey;yy+=stepY){for(let xx=sx;xx<ex;xx+=stepX){const i=(yy*W+xx)*4;r+=img[i];g+=img[i+1];b+=img[i+2];c++;}}
-    return c?{r:r/c,g:g/c,b:b/c}:{r:200,g:200,b:200};
-  }
-  function rgb2hsv(r,g,b){r/=255;g/=255;b/=255;const M=Math.max(r,g,b),m=Math.min(r,g,b),d=M-m;let h=0;if(d){if(M===r)h=((g-b)/d)%6;else if(M===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;if(h<0)h+=360;}return{hue:h,s:M?d/M:0,v:M};}
-  function camoAt(x,y,w,h,str){ const {r,g,b}=sampleAvg(x,y,w,h); const {hue,s,v}=rgb2hsv(r,g,b);
-    const hh=(hue+(Math.random()*10-5)*str).toFixed(1), sat=(1+(s-0.5)*0.9*str).toFixed(2), br=(1+(v-0.5)*0.7*str).toFixed(2);
-    return `hue-rotate(${hh}deg) saturate(${sat}) brightness(${br})`;
-  }
-
-  /* Frog source: emoji rendered to image (keine externen Assets) */
-  function emojiFrog(){ const c=document.createElement('canvas'); c.width=256; c.height=256; const k=c.getContext('2d'); k.font='200px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",emoji'; k.textAlign='center'; k.textBaseline='middle'; k.fillText('🐸',128,140); return c.toDataURL('image/png'); }
-  S.frogSrc=emojiFrog();
-
-  function diff(){ switch(S.diff){
-    case 'easy': return {camo:0,size:1.22,op:.98,perc:.33,time:+6,minDist:0.9};
-    case 'mid':  return {camo:2,size:1.00,op:.88,perc:.52,time:0,  minDist:1.0};
-    case 'hard': return {camo:3,size:0.92,op:.82,perc:.64,time:-2,minDist:1.1};
-  }}
-
-  /* ---- Verteilung: Kandidaten + 3x3 Round-Robin + Poisson-Abstand ---- */
-  function percentile(a,p){ const b=[...a].sort((x,y)=>x-y); const i=Math.floor(Math.max(0,Math.min(1,p))*(b.length-1)); return b[i]; }
-  function busyCandidates(step){
-    const {w,h,data}=S.busyMap; const pts=[];
-    for(let y=step/2;y<h;y+=step){
-      for(let x=step/2;x<w;x+=step){
-        const idx=(Math.floor(y)*w+Math.floor(x)); let sc=data[idx]||0;
-        const edge=Math.min(x/w, y/h, (w-x)/w, (h-y)/h); // Randstrafe
-        sc*= Math.max(0, 1 - (0.15/Math.max(0.001,edge)));
-        pts.push({x,y,score:sc, cx:Math.floor(x/(w/3)), cy:Math.floor(y/(h/3))});
-      }
-    }
-    return pts;
-  }
-  function selectSpawns(n, frogSize){
-    const cfg=diff();
-    const step=Math.max(22, Math.round(Math.min(el.stage.clientWidth, el.stage.clientHeight)/18));
-    const pts=busyCandidates(step); const thr=percentile(pts.map(p=>p.score), cfg.perc);
-    let pool=pts.filter(p=>p.score>=thr); if(pool.length<n*3) pool=pts.sort((a,b)=>b.score-a.score).slice(0, Math.max(n*3,pts.length));
-    // 3x3 Zellen
-    const buckets=new Map(); for(const p of pool){ const k=p.cx+','+p.cy; if(!buckets.has(k)) buckets.set(k,[]); buckets.get(k).push(p); }
-    for(const arr of buckets.values()) arr.sort((a,b)=>b.score-a.score);
-    const keys=[...buckets.keys()];
-    const out=[]; let i=0, guard=0; const minD=cfg.minDist*frogSize*.9;
-    while(out.length<n && guard++<5000 && keys.length){
-      const key=keys[i%keys.length]; i++;
-      const arr=buckets.get(key); if(!arr || !arr.length){ keys.splice((i-1)%keys.length,1); continue; }
-      const p=arr.shift();
-      let ok=true; for(const q of out){ if(Math.hypot(q.x-p.x,q.y-p.y)<minD){ ok=false; break; } }
-      if(ok) out.push(p);
-    }
-    if(out.length<n){
-      pool.sort((a,b)=>b.score-a.score);
-      for(const p of pool){
-        if(out.length>=n) break;
-        let ok=true; for(const q of out){ if(Math.hypot(q.x-p.x,q.y-p.y)<minD){ ok=false; break; } }
-        if(ok) out.push(p);
-      }
-    }
-    return out.map(p=>({x:p.x,y:p.y}));
-  }
-
-  function placeFrogs(lv){
-    const sw=el.stage.clientWidth, sh=el.stage.clientHeight;
-    if(sw<20||sh<20||!S.busyMap){ alert('Bitte zuerst Level/Bild wählen.'); return false; }
-    el.stage.querySelectorAll('.frog,.hit').forEach(n=>n.remove());
-    const cfg=diff(); const count=randi(lv.count[0], lv.count[1]);
-    S.toFind=count; S.hits=0; S.clicks=0; S.multiplier=1; S.comboTime=0;
-    const base=Math.max(52, Math.min(sw,sh)*0.16) * cfg.size; const avgSize=base*((lv.scale[0]+lv.scale[1])/2);
-    const spawns=selectSpawns(count, avgSize);
-
-    for(let i=0;i<count;i++){
-      const img=new Image(); img.src=S.frogSrc; img.className='frog';
-      const scale=rand(lv.scale[0], lv.scale[1]); const size=Math.round(base*scale); img.style.width=size+'px';
-      img.onload=()=>{
-        const w=img.width,h=img.height,pad=Math.max(6,Math.min(w,h)*0.18), p=spawns[i]||{x:rand(pad,sw-pad),y:rand(pad,sh-pad)};
-        const x=clamp(p.x-w/2, pad, sw-w-pad), y=clamp(p.y-h/2, pad, sh-h-pad);
-        img.style.left=x+'px'; img.style.top=y+'px'; img.style.rotate=`${(Math.random()*12-6).toFixed(1)}deg`;
-        img.style.opacity=cfg.op.toFixed(2); img.style.filter = cfg.camo?camoAt(x,y,w,h,cfg.camo):'none'; img.style.mixBlendMode = cfg.camo?'multiply':'normal';
-        if(S.diff==='hard'){
-          const m=document.createElement('canvas'); m.width=w; m.height=h; const k=m.getContext('2d'); k.fillStyle='black'; k.fillRect(0,0,w,h); k.globalCompositeOperation='destination-out'; k.fillStyle='white';
-          const v=Math.random()<.5; if(v) k.fillRect(0,0,w*0.5,h); else k.fillRect(0,h*0.5,w,h*0.5);
-          k.globalCompositeOperation='source-over'; const gg=v?k.createLinearGradient(w*0.45,0,w*0.6,0):k.createLinearGradient(0,h*0.45,0,h*0.6);
-          gg.addColorStop(0,'rgba(0,0,0,0)'); gg.addColorStop(1,'rgba(0,0,0,1)'); k.fillStyle=gg; if(v) k.fillRect(w*0.45,0,w*0.15,h); else k.fillRect(0,h*0.45,w,h*0.15);
-          const url=m.toDataURL(); img.style.maskImage=`url(${url})`; img.style.webkitMaskImage=`url(${url})`;
-        }
-      };
-      img.addEventListener('click',e=>{ e.stopPropagation(); S.hits++; S.clicks++; const now=performance.now(); S.multiplier=(now-S.comboTime<2000)?Math.min(5,S.multiplier+1):1; S.comboTime=now; S.score+=100*S.multiplier; beep(880,.06,'square',.03); img.classList.add('found'); setTimeout(()=>img.remove(),260); S.toFind--; el.left.textContent=S.toFind; if(S.toFind<=0) levelClear(); setHUD(); });
-      el.stage.appendChild(img);
-    }
-    el.stage.onclick=e=>{ S.clicks++; S.score=Math.max(0,S.score-15); S.multiplier=1; const r=el.stage.getBoundingClientRect(); const x=e.clientX-r.left, y=e.clientY-r.top; const fx=document.createElement('span'); fx.className='hit'; fx.style.left=x+'px'; fx.style.top=y+'px'; el.stage.appendChild(fx); setTimeout(()=>fx.remove(),500); beep(300,.05,'triangle',.02); setHUD(); };
-    el.left.textContent=S.toFind; setHUD(); return true;
-  }
-
-  /* ==== flow ==== */
-  function startLevel(){ const lv=LEVELS[S.levelIdx]; const cfg=diff(); S.levelTime=clamp(lv.time+cfg.time,20,120); S.timeLeft=S.levelTime; el.bar.style.width='0%'; placeFrogs(lv); S.running=true; startTick(); }
-  function newGame(){ S.levelIdx=0; S.lives=3; S.score=0; setHUD(); startLevel(); }
-  function levelClear(){ S.running=false; stopTick(); $('#sumLevel').textContent=(S.levelIdx+1)+' / '+LEVELS.length; $('#sumTime').textContent=fmt(S.levelTime-S.timeLeft); const acc=S.clicks?Math.round((S.hits/S.clicks)*100):100; $('#sumAcc').textContent=acc+'%'; $('#sumScore').textContent=S.score; el.summary.setAttribute('aria-hidden','false'); }
-  function loseLife(){ S.running=false; stopTick(); S.lives--; setHUD(); if(S.lives<=0){ el.lobby.setAttribute('aria-hidden','false'); return; } setTimeout(()=>startLevel(),150); }
-
-  /* ==== UI ==== */
-  // Lobby
-  el.quickPlay.addEventListener('click',()=>{ S.diff='mid'; setActiveDiff(); const pick = samples[['sample:forest','sample:leaves','sample:stones'][randi(0,2)]]; el.lobby.setAttribute('aria-hidden','true'); loadBG(pick, ()=> newGame()); });
-  el.toLevel.addEventListener('click',()=>{ el.lobby.setAttribute('aria-hidden','true'); el.levels.setAttribute('aria-hidden','false'); });
-
-  // Level-Auswahl
-  el.pickPhoto.addEventListener('click',()=> el.bgInput.click());
-  el.bgInput.addEventListener('change',e=>{ const f=e.target.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ selectedBG=r.result; el.photoThumb.src=r.result; $('#photoSlot input').checked=true; }; r.readAsDataURL(f); });
-  el.toDiff.addEventListener('click',()=>{
-    const picked=document.querySelector('input[name="bgselect"]:checked');
-    const val=picked?.value; const src=(val==='photo')?selectedBG:samples[val];
-    if(!src){ alert('Bitte Szene wählen (oder „Sofort spielen“).'); return; }
-    loadBG(src, ()=>{ el.levels.setAttribute('aria-hidden','true'); el.diffSel.setAttribute('aria-hidden','false'); });
-  });
-
-  // Difficulty
-  function setActiveDiff(){ $$('#diffs .pillDiff').forEach(x=>x.dataset.active=(x.dataset.diff===S.diff?'true':'false')); }
-  $$('#diffs .pillDiff').forEach(p=> p.addEventListener('click',()=>{ S.diff=p.dataset.diff; setActiveDiff(); }));
-  S.diff='mid'; setActiveDiff();
-  el.backLevels.addEventListener('click',()=>{ el.diffSel.setAttribute('aria-hidden','true'); el.levels.setAttribute('aria-hidden','false'); });
-  el.startGame.addEventListener('click',()=>{ el.diffSel.setAttribute('aria-hidden','true'); newGame(); });
-
-  // Pause
-  el.pauseOpen.addEventListener('click',()=>{ S.running=false; el.pause.setAttribute('aria-hidden','false'); });
-  el.resume.addEventListener('click',()=>{ el.pause.setAttribute('aria-hidden','true'); S.running=true; });
-  el.menuLevels.addEventListener('click',()=>{ el.pause.setAttribute('aria-hidden','true'); el.levels.setAttribute('aria-hidden','false'); });
-
-  // Summary
-  el.nextLevel.addEventListener('click',()=>{ el.summary.setAttribute('aria-hidden','true'); S.levelIdx++; if(S.levelIdx>=LEVELS.length){ alert('Alle Level geschafft!'); el.lobby.setAttribute('aria-hidden','false'); return; } startLevel(); });
-  el.toMenu.addEventListener('click',()=>{ el.summary.setAttribute('aria-hidden','true'); el.lobby.setAttribute('aria-hidden','false'); S.running=false; });
-
-  // ESC quick pause
-  addEventListener('keydown',e=>{ if(e.key==='Escape'){ const hidden=el.pause.getAttribute('aria-hidden')==='true'; el.pause.setAttribute('aria-hidden', hidden?'false':'true'); S.running=!hidden?false: S.running; } });
-})();
-</script>
+    <script src="js/levels.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
