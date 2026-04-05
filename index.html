@@ -100,60 +100,55 @@
                 </div>
             </div>
 
-            <!-- Current Level Card -->
-            <div class="current-level-card wood-frame" id="current-level-card">
-                <div class="wood-frame-corner tl"></div>
-                <div class="wood-frame-corner tr"></div>
-                <div class="wood-frame-corner bl"></div>
-                <div class="wood-frame-corner br"></div>
-                <div class="card-label">AKTUELLES LEVEL</div>
-                <div class="card-content">
-                    <div class="card-preview" id="level-preview">
-                        <span class="preview-icon">🌳</span>
-                        <div class="preview-overlay"></div>
-                    </div>
-                    <div class="card-info">
+            <!-- Middle Row: Level Card LEFT + Buttons CENTER -->
+            <div class="middle-row">
+                <!-- Current Level Card (left side) -->
+                <div class="current-level-card" id="current-level-card">
+                    <img src="lvl_kachel.png" alt="" class="level-card-bg" draggable="false">
+                    <div class="level-card-content">
+                        <div class="card-label">AKTUELLES LEVEL</div>
                         <h3 id="current-level-name">Waldlichtung</h3>
+                        <div class="card-preview" id="level-preview">
+                            <span class="preview-icon">🌳</span>
+                        </div>
                         <p class="card-frogs"><span id="current-level-frogs">5</span> 🐸 versteckte Froggys</p>
                         <p class="card-time">⏱️ Bestzeit: <span id="current-level-best">--:--</span></p>
+                        <button class="btn-play-card" id="btn-continue">Weiter spielen →</button>
                     </div>
                 </div>
-                <button class="btn-play-card" id="btn-continue">
-                    <span>Weiter spielen</span>
-                    <span class="btn-arrow">→</span>
-                </button>
-            </div>
 
-            <!-- Menu Buttons (Image-based) -->
-            <div class="menu-buttons">
-                <button class="menu-btn-img" id="btn-play">
-                    <img src="btn_spielen.png" alt="Spielen" draggable="false">
-                </button>
-                <button class="menu-btn-img" id="btn-history">
-                    <img src="btn_historie.png" alt="Historie" draggable="false">
-                </button>
-                <button class="menu-btn-img" id="btn-settings">
-                    <img src="btn_einstellungen.png" alt="Einstellungen" draggable="false">
-                </button>
-                <button class="menu-btn-img" id="btn-info">
-                    <img src="btn_infos.png" alt="Infos" draggable="false">
-                </button>
-            </div>
-
-            <!-- New Level Banner -->
-            <div class="new-level-banner">
-                <img src="new_lvl.png" alt="" class="new-level-bg" draggable="false">
-                <div class="new-level-content">
-                    <strong>NEUES LEVEL</strong>
-                    <span class="banner-sub">Jeden Mittwoch! ⏰ <span id="countdown-timer">--T --h --m</span></span>
+                <!-- Menu Buttons (right of level card) -->
+                <div class="menu-buttons">
+                    <button class="menu-btn-img" id="btn-play">
+                        <img src="btn_spielen.png" alt="Spielen" draggable="false">
+                    </button>
+                    <button class="menu-btn-img" id="btn-history">
+                        <img src="btn_historie.png" alt="Historie" draggable="false">
+                    </button>
+                    <button class="menu-btn-img" id="btn-settings">
+                        <img src="btn_einstellungen.png" alt="Einstellungen" draggable="false">
+                    </button>
+                    <button class="menu-btn-img" id="btn-info">
+                        <img src="btn_infos.png" alt="Infos" draggable="false">
+                    </button>
                 </div>
             </div>
 
-            <!-- Community -->
-            <div class="community-banner wood-sign">
-                <span>Willkommen zur</span>
-                <strong>FROGGY HUNT</strong>
-                <span>Community! ❤️</span>
+            <!-- Bottom Row: Neues Level LEFT + Community RIGHT -->
+            <div class="bottom-row">
+                <div class="new-level-banner">
+                    <img src="new_lvl.png" alt="" class="new-level-bg" draggable="false">
+                    <div class="new-level-content">
+                        <strong>NEUES LEVEL</strong>
+                        <span class="banner-sub">Jeden Mittwoch! ⏰ <span id="countdown-timer">--T --h --m</span></span>
+                    </div>
+                </div>
+
+                <div class="community-banner">
+                    <span>Willkommen zur</span>
+                    <strong>FROGGY HUNT</strong>
+                    <span>Community! ❤️</span>
+                </div>
             </div>
         </div>
     </div>
