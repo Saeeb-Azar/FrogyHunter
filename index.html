@@ -43,38 +43,10 @@
 
     <!-- Main Menu -->
     <div id="main-menu" class="screen">
-        <!-- Scenic Background -->
+        <!-- Background Image -->
         <div class="menu-bg">
-            <div class="bg-sky"></div>
-            <div class="bg-clouds">
-                <div class="cloud cloud-1"></div>
-                <div class="cloud cloud-2"></div>
-                <div class="cloud cloud-3"></div>
-            </div>
-            <div class="bg-mountains"></div>
-            <div class="bg-trees-far"></div>
-            <div class="bg-trees-near"></div>
-            <div class="bg-grass"></div>
-            <div class="bg-water">
-                <div class="water-shimmer"></div>
-            </div>
-            <div class="bg-flowers">
-                <span class="flower f1">🌸</span>
-                <span class="flower f2">🌺</span>
-                <span class="flower f3">🌷</span>
-                <span class="flower f4">🌻</span>
-                <span class="flower f5">🌼</span>
-                <span class="flower f6">🪷</span>
-                <span class="flower f7">🌸</span>
-                <span class="flower f8">🌺</span>
-            </div>
-            <div class="bg-leaves">
-                <span class="leaf l1">🍃</span>
-                <span class="leaf l2">🍂</span>
-                <span class="leaf l3">🍃</span>
-                <span class="leaf l4">🍂</span>
-                <span class="leaf l5">🍃</span>
-            </div>
+            <img src="assets/images/lobby-bg.png" alt="" class="menu-bg-img">
+            <div class="menu-bg-overlay"></div>
         </div>
 
         <!-- Top Bar -->
@@ -152,64 +124,20 @@
                 </button>
             </div>
 
-            <!-- Menu Buttons -->
+            <!-- Menu Buttons (Image-based) -->
             <div class="menu-buttons">
-                <button class="menu-btn stone-btn btn-green" id="btn-play">
-                    <div class="stone-btn-inner">
-                        <div class="stone-btn-shine"></div>
-                        <span class="menu-btn-icon">🔍</span>
-                        <span class="menu-btn-text">SPIELEN</span>
-                    </div>
-                    <div class="vine vine-tl">🌿</div>
-                    <div class="vine vine-br">🌿</div>
+                <button class="menu-btn-img" id="btn-play">
+                    <img src="assets/images/btn-spielen.png" alt="Spielen" draggable="false">
                 </button>
-                <button class="menu-btn stone-btn btn-blue" id="btn-history">
-                    <div class="stone-btn-inner">
-                        <div class="stone-btn-shine"></div>
-                        <span class="menu-btn-icon">📖</span>
-                        <span class="menu-btn-text">HISTORIE</span>
-                    </div>
-                    <div class="vine vine-tl">🍃</div>
-                    <div class="bug bug-tr">🐞</div>
+                <button class="menu-btn-img" id="btn-history">
+                    <img src="assets/images/btn-historie.png" alt="Historie" draggable="false">
                 </button>
-                <button class="menu-btn stone-btn btn-purple" id="btn-settings">
-                    <div class="stone-btn-inner">
-                        <div class="stone-btn-shine"></div>
-                        <span class="menu-btn-icon">⚙️</span>
-                        <span class="menu-btn-text">EINSTELL.</span>
-                    </div>
-                    <div class="vine vine-br">🌿</div>
-                    <div class="bug bug-tl">🐛</div>
+                <button class="menu-btn-img" id="btn-settings">
+                    <img src="assets/images/btn-einstellungen.png" alt="Einstellungen" draggable="false">
                 </button>
-                <button class="menu-btn stone-btn btn-yellow" id="btn-info">
-                    <div class="stone-btn-inner">
-                        <div class="stone-btn-shine"></div>
-                        <span class="menu-btn-icon">ℹ️</span>
-                        <span class="menu-btn-text">INFOS</span>
-                    </div>
-                    <div class="vine vine-tl">🍃</div>
+                <button class="menu-btn-img" id="btn-info">
+                    <img src="assets/images/btn-infos.png" alt="Infos" draggable="false">
                 </button>
-            </div>
-
-            <!-- Frog Mascot -->
-            <div class="menu-mascot">
-                <div class="mascot-platform">
-                    <div class="platform-wood"></div>
-                </div>
-                <div class="mascot-frog" id="menu-mascot-frog">
-                    <div class="frog-body">
-                        <div class="frog-eyes">
-                            <div class="frog-eye left"><div class="frog-pupil"></div></div>
-                            <div class="frog-eye right"><div class="frog-pupil"></div></div>
-                        </div>
-                        <div class="frog-mouth"></div>
-                        <div class="frog-cheeks">
-                            <div class="frog-cheek left"></div>
-                            <div class="frog-cheek right"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="mascot-snail">🐌</div>
             </div>
 
             <!-- New Level Banner -->
