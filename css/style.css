@@ -538,8 +538,8 @@ html, body {
 /* Current Level Card (left side) */
 .current-level-card {
     position: relative;
-    width: 160px;
-    min-width: 140px;
+    width: 220px;
+    min-width: 200px;
     flex-shrink: 0;
     border: none;
     background: none;
@@ -560,7 +560,7 @@ html, body {
 .level-card-content {
     position: relative;
     z-index: 2;
-    padding: 14px 12px 10px;
+    padding: 18px 16px 14px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -579,13 +579,13 @@ html, body {
 .level-card-content h3 {
     color: var(--text-light);
     font-family: var(--font-display);
-    font-size: 0.85rem;
+    font-size: 1.1rem;
     margin-bottom: 4px;
     text-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
 
 .card-preview {
-    width: 90px; height: 60px;
+    width: 120px; height: 80px;
     background: rgba(0,0,0,0.35);
     border-radius: 8px;
     display: flex;
@@ -600,16 +600,16 @@ html, body {
 
 .card-frogs, .card-time {
     color: rgba(255,255,255,0.8);
-    font-size: 0.65rem;
+    font-size: 0.8rem;
     font-weight: 700;
     line-height: 1.4;
 }
 
 .btn-play-card {
     width: 100%;
-    margin-top: 6px;
-    padding: 7px 10px;
-    font-size: 0.7rem;
+    margin-top: 8px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
     background: linear-gradient(180deg, #5adb3a, #3aaa2a, #2d8a1e);
     border: 2.5px solid var(--green-pale);
     border-radius: 12px;
@@ -684,8 +684,8 @@ html, body {
 /* Banners */
 .new-level-banner {
     position: relative;
-    height: 90px;
-    width: 200px;
+    height: 140px;
+    width: 320px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -718,7 +718,7 @@ html, body {
 .new-level-content strong {
     display: block;
     font-family: var(--font-display);
-    font-size: 1.1rem;
+    font-size: 1.4rem;
     color: var(--yellow-light);
     letter-spacing: 1.5px;
     text-shadow: 0 2px 4px rgba(0,0,0,0.6);
@@ -727,7 +727,7 @@ html, body {
 .banner-sub {
     color: rgba(255,255,255,0.85);
     font-weight: 700;
-    font-size: 0.8rem;
+    font-size: 0.95rem;
     text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
@@ -743,10 +743,10 @@ html, body {
 
 .community-banner {
     text-align: center;
-    padding: 10px 14px;
+    padding: 14px 18px;
     color: rgba(255,255,255,0.85);
     font-weight: 700;
-    font-size: 0.72rem;
+    font-size: 0.85rem;
     display: flex;
     flex-direction: column;
     gap: 1px;
@@ -754,12 +754,12 @@ html, body {
     border: 2px solid rgba(138,100,48,0.4);
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    max-width: 160px;
+    max-width: 200px;
 }
 
 .community-banner strong {
     color: var(--yellow-light);
-    font-size: 0.85rem;
+    font-size: 1.05rem;
     font-family: var(--font-display);
     text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
