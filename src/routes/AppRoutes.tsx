@@ -14,7 +14,12 @@ import { LoginPage } from '../pages/LoginPage'
 import { PlayPage } from '../pages/PlayPage'
 import { SettingsPage } from '../pages/SettingsPage'
 
-export const router = createBrowserRouter([
+const baseUrl = import.meta.env.BASE_URL
+const routerBasename =
+  baseUrl === '/' ? undefined : baseUrl.replace(/\/$/, '')
+
+export const router = createBrowserRouter(
+  [
   { path: '/login', element: <LoginPage /> },
   {
     element: <ProtectedLayout />,
@@ -43,4 +48,6 @@ export const router = createBrowserRouter([
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },
-])
+  ],
+  { basename: routerBasename },
+)
