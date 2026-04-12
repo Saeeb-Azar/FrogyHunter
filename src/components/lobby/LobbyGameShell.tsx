@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useSettingsStore } from '../../stores/settingsStore'
 import type { Level } from '../../types/models'
 import { WoodKachelPicture } from '../ui/WoodKachelPicture'
+import { NewLevelCountdown } from './NewLevelCountdown'
 
 /** true = nur Hintergrund; false = Level-Holztafel + Shell (Kacheln kommen aus LobbyFrogMenu) */
 export const LOBBY_BG_ONLY = false
@@ -115,6 +116,7 @@ function LobbyGameShellFull({ showAdminLink, level }: LobbyGameShellProps) {
             <div className="lobby-fh__newlvl-copy">
               <p className="lobby-fh__newlvl-title">NEUES LEVEL</p>
               <p className="lobby-fh__newlvl-sub">JEDEN MITTWOCH</p>
+              <NewLevelCountdown />
             </div>
           </div>
         </div>

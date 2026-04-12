@@ -3177,6 +3177,21 @@ body.play-zoom-lens-active .play-zoom-corner__btn {
     0 1px 0 rgba(120, 53, 15, 0.55);
 }
 
+.lobby-fh--floating-level .lobby-fh__newlvl-countdown {
+  margin: 0;
+  padding: 0 0.15rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: clamp(0.52rem, 2.5vw, 0.82rem);
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: #fef9c3;
+  text-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.65),
+    0 1px 0 rgba(120, 53, 15, 0.5);
+}
+
 @media (min-width: 480px) {
   .lobby-fh--floating-level .lobby-fh__newlvl-board {
     width: min(46vw, 340px);
