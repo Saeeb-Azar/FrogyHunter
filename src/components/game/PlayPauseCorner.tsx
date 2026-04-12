@@ -1,4 +1,6 @@
-const PAUSE_IMG = '/assets/ui/pause.png'
+import { publicUrl } from '../../lib/publicUrl'
+
+const PAUSE_IMG = publicUrl('assets/ui/pause.png')
 
 export function PlayPauseCorner() {
   return (

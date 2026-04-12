@@ -1,7 +1,8 @@
+import { publicUrl } from '../../lib/publicUrl'
 import type { FrogMarker } from '../../types/models'
 
-const FROGGY_ANZAHL_IMG = '/assets/ui/froggy_anzahl.png'
-const LEER_FROGGY = `${import.meta.env.BASE_URL}assets/ui/leer_froggy.png`
+const FROGGY_ANZAHL_IMG = publicUrl('assets/ui/froggy_anzahl.png')
+const LEER_FROGGY = publicUrl('assets/ui/leer_froggy.png')
 
 const SLOT_COUNT = 5
 

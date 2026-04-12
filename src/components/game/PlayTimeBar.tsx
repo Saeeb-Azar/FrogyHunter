@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { publicUrl } from '../../lib/publicUrl'
 
-const TIME_IMG = '/assets/ui/time.png'
+const TIME_IMG = publicUrl('assets/ui/time.png')
 
 function fmt(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000))

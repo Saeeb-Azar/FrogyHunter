@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom'
+import { publicUrl } from '../../lib/publicUrl'
 
 const BTN = {
-  spielen: '/assets/ui/btn_spielen.png',
-  historie: '/assets/ui/btn_historie.png',
-  einstellungen: '/assets/ui/btn_einstellungen.png',
-  infos: '/assets/ui/btn_infos.png',
+  spielen: publicUrl('assets/ui/btn_spielen.png'),
+  historie: publicUrl('assets/ui/btn_historie.png'),
+  einstellungen: publicUrl('assets/ui/btn_einstellungen.png'),
+  infos: publicUrl('assets/ui/btn_infos.png'),
 } as const
 
-const PLAY_PHONE = '/assets/ui/extra-phone/play-button.png' as const
-const LVL_SHOW_PHONE = '/assets/ui/extra-phone/lvl-show.png' as const
+const PLAY_PHONE = publicUrl('assets/ui/extra-phone/play-button.png')
+const LVL_SHOW_PHONE = publicUrl('assets/ui/extra-phone/lvl-show.png')
 
 /** Intrinsische Maße der Button-PNGs (Ordner „Design ohne Titel (4)“) */
 const BTN_IMG_W = 3470

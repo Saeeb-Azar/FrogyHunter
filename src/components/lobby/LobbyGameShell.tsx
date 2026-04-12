@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { publicUrl } from '../../lib/publicUrl'
 import { useSettingsStore } from '../../stores/settingsStore'
 import type { Level } from '../../types/models'
 import { WoodKachelPicture } from '../ui/WoodKachelPicture'
@@ -21,14 +22,14 @@ const LOBBY_SHOW_SHELL_FOOTER = false
 
 /** Nur für LOBBY_SHOW_SHELL_NAV — `public/assets/ui/btn_*.png` */
 const SHELL_NAV_IMG = {
-  btnSpielen: '/assets/ui/btn_spielen.png',
-  btnHistorie: '/assets/ui/btn_historie.png',
-  btnEinstellungen: '/assets/ui/btn_einstellungen.png',
-  btnInfos: '/assets/ui/btn_infos.png',
+  btnSpielen: publicUrl('assets/ui/btn_spielen.png'),
+  btnHistorie: publicUrl('assets/ui/btn_historie.png'),
+  btnEinstellungen: publicUrl('assets/ui/btn_einstellungen.png'),
+  btnInfos: publicUrl('assets/ui/btn_infos.png'),
 } as const
 
 /** Holzschild unten links (Platzhalter-Fläche; Grafik ohne Text: `new_lvl.png` austauschen) */
-const LOBBY_NEW_LVL_BOARD = '/assets/ui/new_lvl.png'
+const LOBBY_NEW_LVL_BOARD = publicUrl('assets/ui/new_lvl.png')
 
 function UtilSvgMusic() {
   return (

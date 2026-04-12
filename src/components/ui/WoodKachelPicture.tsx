@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { publicUrl } from '../../lib/publicUrl'
 
 /** Holzkachel (`public/assets/ui/lvl_kachel.png`). Mit `playHref` nur die Grafik klickbar, nicht das ganze Aside. */
 export function WoodKachelPicture({
@@ -15,7 +16,7 @@ export function WoodKachelPicture({
   const img = (
     <img
       className={imgClassName}
-      src="/assets/ui/lvl_kachel.png"
+      src={publicUrl('assets/ui/lvl_kachel.png')}
       alt=""
       width={3470}
       height={1812}

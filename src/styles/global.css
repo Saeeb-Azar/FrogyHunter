@@ -2126,7 +2126,7 @@ body.play-zoom-lens-active .play-zoom-corner__btn {
   min-height: 100vh;
   min-height: 100dvh;
   background-color: #2d6b4e;
-  background-image: url('/assets/game_ui_phone.png');
+  background-image: var(--fh-bg-phone);
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center center;
@@ -2134,7 +2134,7 @@ body.play-zoom-lens-active .play-zoom-corner__btn {
 
 @media (min-width: 768px) {
   .app-shell--fh {
-    background-image: url('/assets/game-scene-bg.png');
+    background-image: var(--fh-bg-desktop);
     background-position: center bottom;
   }
 }
@@ -2199,7 +2199,7 @@ body.play-zoom-lens-active .play-zoom-corner__btn {
   min-height: 100dvh;
   min-height: 100vh;
   background-color: #7ec8e3;
-  background-image: url('/assets/game_ui.png');
+  background-image: var(--fh-play-blank-bg);
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center center;

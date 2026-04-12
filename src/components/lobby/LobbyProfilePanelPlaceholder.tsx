@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { publicUrl } from '../../lib/publicUrl'
 import type { Level, UserProgress } from '../../types/models'
 
 export interface LobbyProfilePanelPlaceholderProps {
@@ -9,7 +10,7 @@ export interface LobbyProfilePanelPlaceholderProps {
 }
 
 /**
- * Lvl-/Profil-Leiste oben links (`/assets/profile-panel.png`, mit Transparenz).
+ * Lvl-/Profil-Leiste oben links (`public/assets/profile-panel.png`, mit Transparenz).
  * Profilbild im Rahmen links; Name, Level-Nr. und Frosch-Fortschritt rechts daneben.
  */
 export function LobbyProfilePanelPlaceholder({
@@ -30,7 +31,7 @@ export function LobbyProfilePanelPlaceholder({
 
   return (
     <div className="lobby-profile-panel">
-      <img src="/assets/profile-panel.png" alt="" width={1735} height={906} decoding="async" />
+      <img src={publicUrl('assets/profile-panel.png')} alt="" width={1735} height={906} decoding="async" />
       <div
         className="lobby-profile-panel__avatar-slot"
         aria-label={user?.photoURL ? 'Profilbild' : 'Profilbild-Platzhalter'}
