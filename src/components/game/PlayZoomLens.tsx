@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { computeLensDrawParams } from '../../lib/playPicLens'
 
 function readLensPx(): number {
@@ -16,48 +16,27 @@ interface Props {
 
 export function PlayZoomLens({ sourceImgRef, active }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const rafRef = useRef<number>(0)
-  const [pos, setPos] = useState({ x: 0, y: 0 })
-  const [imgTick, setImgTick] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const posRef = useRef({ x: 0, y: 0 })
+  const dirtyRef = useRef(true)
+  const imgTickRef = useRef(0)
   const [lensPx, setLensPx] = useState(readLensPx)
 
   useEffect(() => {
     const onResize = () => setLensPx(readLensPx())
-    onResize()
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current
-    const img = sourceImgRef.current
-    if (!canvas || !img || !active) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const params = computeLensDrawParams(img, pos.x, pos.y, lensPx)
-    ctx.clearRect(0, 0, lensPx, lensPx)
-
-    if (!params || params.sw < 1 || params.sh < 1) {
-      ctx.fillStyle = 'rgba(0,0,0,0.15)'
-      ctx.fillRect(0, 0, lensPx, lensPx)
-      return
-    }
-
-    try {
-      ctx.drawImage(img, params.sx, params.sy, params.sw, params.sh, 0, 0, lensPx, lensPx)
-    } catch {
-      /* z. B. CORS — ignorieren */
-    }
-  }, [active, pos.x, pos.y, imgTick, sourceImgRef, lensPx])
-
   useEffect(() => {
     if (!active) return
-    setPos({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
+
+    posRef.current = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+    dirtyRef.current = true
 
     const setFromClient = (clientX: number, clientY: number) => {
-      setPos({ x: clientX, y: clientY })
+      posRef.current = { x: clientX, y: clientY }
+      dirtyRef.current = true
     }
 
     const onMouse = (e: MouseEvent) => setFromClient(e.clientX, e.clientY)
@@ -69,19 +48,47 @@ export function PlayZoomLens({ sourceImgRef, active }: Props) {
     window.addEventListener('mousemove', onMouse, { passive: true })
     window.addEventListener('touchstart', onTouch, { passive: true })
     window.addEventListener('touchmove', onTouch, { passive: true })
+
+    let raf = 0
+    const loop = () => {
+      if (dirtyRef.current) {
+        dirtyRef.current = false
+        const container = containerRef.current
+        const canvas = canvasRef.current
+        const img = sourceImgRef.current
+        if (container) {
+          container.style.left = `${posRef.current.x}px`
+          container.style.top = `${posRef.current.y}px`
+        }
+        if (canvas && img) {
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            const params = computeLensDrawParams(img, posRef.current.x, posRef.current.y, lensPx)
+            ctx.clearRect(0, 0, lensPx, lensPx)
+            if (!params || params.sw < 1 || params.sh < 1) {
+              ctx.fillStyle = 'rgba(0,0,0,0.15)'
+              ctx.fillRect(0, 0, lensPx, lensPx)
+            } else {
+              try {
+                ctx.drawImage(img, params.sx, params.sy, params.sw, params.sh, 0, 0, lensPx, lensPx)
+              } catch {
+                /* z. B. CORS — ignorieren */
+              }
+            }
+          }
+        }
+      }
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+
     return () => {
       window.removeEventListener('mousemove', onMouse)
       window.removeEventListener('touchstart', onTouch)
       window.removeEventListener('touchmove', onTouch)
+      cancelAnimationFrame(raf)
     }
-  }, [active])
-
-  useEffect(() => {
-    if (!active) return
-    cancelAnimationFrame(rafRef.current)
-    rafRef.current = requestAnimationFrame(() => draw())
-    return () => cancelAnimationFrame(rafRef.current)
-  }, [active, pos, imgTick, draw, lensPx])
+  }, [active, lensPx, sourceImgRef])
 
   useEffect(() => {
     document.body.classList.toggle('play-zoom-lens-active', active)
@@ -92,7 +99,10 @@ export function PlayZoomLens({ sourceImgRef, active }: Props) {
     if (!active) return
     const img = sourceImgRef.current
     if (!img) return
-    const onLoad = () => setImgTick((t) => t + 1)
+    const onLoad = () => {
+      imgTickRef.current += 1
+      dirtyRef.current = true
+    }
     img.addEventListener('load', onLoad)
     if (img.complete) onLoad()
     return () => img.removeEventListener('load', onLoad)
@@ -102,8 +112,9 @@ export function PlayZoomLens({ sourceImgRef, active }: Props) {
 
   return (
     <div
+      ref={containerRef}
       className="play-zoom-lens"
-      style={{ left: pos.x, top: pos.y, width: lensPx, height: lensPx }}
+      style={{ width: lensPx, height: lensPx }}
       aria-hidden
     >
       <canvas

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { publicUrl } from '../../lib/publicUrl'
 
 const TIME_IMG = publicUrl('assets/ui/time.png')
@@ -16,31 +16,42 @@ interface Props {
   frozenDurationMs?: number | null
 }
 
-export function PlayTimeBar({ startedAt, frozenDurationMs }: Props) {
-  const [tick, setTick] = useState(0)
+function computeMs(startedAt: number | null, frozenDurationMs: number | null | undefined) {
+  if (frozenDurationMs != null) return frozenDurationMs
+  if (startedAt != null) return Date.now() - startedAt
+  return 0
+}
+
+function PlayTimeBarImpl({ startedAt, frozenDurationMs }: Props) {
+  const [liveDisplay, setLiveDisplay] = useState(() => fmt(computeMs(startedAt, null)))
 
   useEffect(() => {
-    if (frozenDurationMs != null) return
-    if (startedAt == null) return
-    const id = window.setInterval(() => setTick((t) => t + 1), 250)
-    return () => clearInterval(id)
+    if (frozenDurationMs != null || startedAt == null) return
+
+    let raf = 0
+    let last = ''
+    const loop = () => {
+      const next = fmt(Date.now() - startedAt)
+      if (next !== last) {
+        last = next
+        setLiveDisplay(next)
+      }
+      raf = window.requestAnimationFrame(loop)
+    }
+    raf = window.requestAnimationFrame(loop)
+    return () => window.cancelAnimationFrame(raf)
   }, [startedAt, frozenDurationMs])
 
-  const ms =
-    frozenDurationMs != null
-      ? frozenDurationMs
-      : startedAt != null
-        ? Date.now() - startedAt
-        : 0
-
-  void tick
+  const display = frozenDurationMs != null ? fmt(frozenDurationMs) : liveDisplay
 
   return (
-    <div className="play-time-bar" role="timer" aria-live="polite" aria-label={`Spielzeit ${fmt(ms)}`}>
+    <div className="play-time-bar" role="timer" aria-live="polite" aria-label={`Spielzeit ${display}`}>
       <div className="play-time-bar__inner">
         <img className="play-time-bar__plate" src={TIME_IMG} alt="" decoding="async" />
-        <span className="play-time-bar__text">{fmt(ms)}</span>
+        <span className="play-time-bar__text">{display}</span>
       </div>
     </div>
   )
 }
+
+export const PlayTimeBar = memo(PlayTimeBarImpl)

@@ -73,30 +73,49 @@ export function PlayView({ level, markers, uid, testMode, onExitTest, bottomBarO
     void syncProgress()
   }, [syncProgress])
 
+  const markersRef = useRef(markers)
+  const foundIdsRef = useRef(foundIds)
   useEffect(() => {
-    if (bottomBarOnly || !playfieldRef.current || !markers.length) return
+    markersRef.current = markers
+  }, [markers])
+  useEffect(() => {
+    foundIdsRef.current = foundIds
+  }, [foundIds])
+
+  const placeRings = useCallback(() => {
     const el = playfieldRef.current
-    const placeRings = () => {
-      const rect = el.getBoundingClientRect()
-      const w = rect.width
-      const h = rect.height
-      const next: Ring[] = []
-      for (const m of markers) {
-        if (!foundIds.has(m.id)) continue
-        next.push({
-          id: m.id,
-          x: m.x * w,
-          y: m.y * h,
-          r: Math.max(0.008, m.radius) * w,
-        })
-      }
-      setRings(next)
+    if (!el) return
+    const m = markersRef.current
+    if (!m.length) return
+    const f = foundIdsRef.current
+    const rect = el.getBoundingClientRect()
+    const w = rect.width
+    const h = rect.height
+    const next: Ring[] = []
+    for (const mk of m) {
+      if (!f.has(mk.id)) continue
+      next.push({
+        id: mk.id,
+        x: mk.x * w,
+        y: mk.y * h,
+        r: Math.max(0.008, mk.radius) * w,
+      })
     }
-    placeRings()
+    setRings(next)
+  }, [])
+
+  useEffect(() => {
+    if (bottomBarOnly || !playfieldRef.current) return
+    const el = playfieldRef.current
     const ro = new ResizeObserver(placeRings)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [bottomBarOnly, markers, foundIds])
+  }, [bottomBarOnly, placeRings])
+
+  useEffect(() => {
+    if (bottomBarOnly) return
+    placeRings()
+  }, [bottomBarOnly, markers, foundIds, placeRings])
 
   const handleImageClick = async (e: React.MouseEvent<HTMLDivElement>) => {
     const field = playfieldRef.current
