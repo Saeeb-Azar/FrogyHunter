@@ -8,7 +8,7 @@ const ZONE = 'Europe/Berlin'
  */
 export function getNextWednesdayMidnightBerlin(now: Date = new Date()): DateTime {
   const z = DateTime.fromJSDate(now).setZone(ZONE)
-  let wed = z.startOf('day')
+  let wed = z.startOf('day').set({ hour: 18 })
   const daysUntilWed = (3 - wed.weekday + 7) % 7
   wed = wed.plus({ days: daysUntilWed })
   if (wed <= z) wed = wed.plus({ weeks: 1 })

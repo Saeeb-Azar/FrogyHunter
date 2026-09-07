@@ -39,14 +39,15 @@ export function MarkerEditor({ imageUrl, markers, onChange }: Props) {
       <div className="marker-editor card" style={{ padding: '0.5rem' }}>
         <div onClick={onImageClick} role="presentation" style={{ position: 'relative' }}>
           <img src={imageUrl} alt="Level-Vorschau für Marker" draggable={false} style={{ width: '100%', height: 'auto', display: 'block' }} />
-          {markers.map((m) => {
+          {markers.map((m, index) => {
             const isSel = m.id === selectedId
             return (
               <button
                 key={m.id}
                 type="button"
                 className={`marker-handle ${isSel ? 'marker-handle--selected' : ''}`}
-                title="Fundstelle"
+                title={`Froggy ${index + 1}`}
+                aria-label={`Froggy ${index + 1} bearbeiten`}
                 onClick={(ev) => {
                   ev.stopPropagation()
                   setSelectedId(m.id)
@@ -60,7 +61,7 @@ export function MarkerEditor({ imageUrl, markers, onChange }: Props) {
                   transform: 'translate(-50%, -50%)',
                   background: isSel ? 'rgba(127,255,92,0.15)' : 'rgba(127,255,92,0.06)',
                 }}
-              />
+              >{index + 1}</button>
             )
           })}
         </div>
@@ -86,15 +87,19 @@ export function MarkerEditor({ imageUrl, markers, onChange }: Props) {
             <input
               id="rad"
               type="range"
-              min={0.015}
-              max={0.12}
-              step={0.002}
+              min={0.005}
+              max={0.2}
+              step={0.001}
               value={selected.radius}
               className="range"
               onChange={(e) => updateSelected({ radius: Number(e.target.value) })}
             />
           </div>
         )}
+        {selected && <div className="studio-marker-fields">
+          <label>X Position (0–1)<input className="input" type="number" min="0" max="1" step="0.001" value={selected.x} onChange={e => updateSelected({ x: Math.min(1, Math.max(0, Number(e.target.value))) })} /></label>
+          <label>Y Position (0–1)<input className="input" type="number" min="0" max="1" step="0.001" value={selected.y} onChange={e => updateSelected({ y: Math.min(1, Math.max(0, Number(e.target.value))) })} /></label>
+        </div>}
       </div>
     </div>
   )

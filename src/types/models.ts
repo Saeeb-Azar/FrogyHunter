@@ -19,6 +19,7 @@ export interface Level {
   frogCount: number
   createdAt: number
   updatedAt: number
+  testedSignature?: string | null
 }
 
 export interface UserProgress {
@@ -29,6 +30,23 @@ export interface UserProgress {
   durationMs: number | null
   clicks: number
   misses: number
+  foundFroggys: string[]
+  completed: boolean
+  hintsUsed?: number
+  bestDurationMs?: number | null
+  xp?: number
+  attempts?: number
+  lastAttemptId?: string
+  activeAttempt?: GameRun | null
+}
+
+export interface GameRun {
+  id: string
+  startedAt: number
+  durationMs: number
+  clicks: number
+  misses: number
+  hintsUsed: number
   foundFroggys: string[]
   completed: boolean
 }

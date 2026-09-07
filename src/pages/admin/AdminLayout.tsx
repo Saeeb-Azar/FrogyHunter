@@ -12,8 +12,8 @@ export function AdminLayout() {
   return (
     <AppLayout showBack backTo="/">
       <header className="admin-shell">
-        <h1 className="admin-shell__title">Admin</h1>
-        <p className="admin-shell__lead">Level, Medien und Fundstellen verwalten – klar strukturiert, ohne Spiel-FX.</p>
+        <h1 className="admin-shell__title">Level Studio</h1>
+        <p className="admin-shell__lead">Hier entstehen die nächsten Froggy Abenteuer.</p>
       </header>
       <nav className="admin-nav" aria-label="Admin Navigation">
         <NavLink

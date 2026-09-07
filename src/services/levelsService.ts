@@ -7,7 +7,9 @@ import {
   serverTimestamp,
   updateDoc,
   type Timestamp,
+  query, where, or, and,
 } from 'firebase/firestore'
+import { checkDbError, supabase } from '../lib/supabase'
 import { MOCK_DEMO_LEVEL } from '../data/mockLevel'
 import { getFirebaseDb, isFirebaseConfigured } from '../lib/firebase'
 import { LS_LEVELS, readJson, writeJson } from '../lib/mockStorage'
@@ -51,10 +53,16 @@ function docToLevel(id: string, d: Record<string, unknown>): Level {
     frogCount: Number(d.frogCount ?? 0),
     createdAt: fireTs(d.createdAt),
     updatedAt: fireTs(d.updatedAt),
+    testedSignature: typeof d.testedSignature === 'string' ? d.testedSignature : null,
   }
 }
 
 export async function listLevelsForAdmin(): Promise<Level[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('levels').select('id,data')
+    checkDbError(error)
+    return (data ?? []).map(r => ({ ...r.data, id: r.id } as Level)).sort((a, b) => b.updatedAt - a.updatedAt)
+  }
   if (!isFirebaseConfigured() || !getFirebaseDb()) {
     const m = getMockLevelsMap()
     return Object.values(m).sort((a, b) => b.updatedAt - a.updatedAt)
@@ -66,13 +74,18 @@ export async function listLevelsForAdmin(): Promise<Level[]> {
 
 export async function listPublishedLevels(): Promise<Level[]> {
   const now = Date.now()
+  if (supabase) {
+    const { data, error } = await supabase.from('levels').select('id,data').eq('data->>status', 'published')
+    checkDbError(error)
+    return (data ?? []).map(r => ({ ...r.data, id: r.id } as Level)).filter(l => l.publishAt == null || l.publishAt <= now).sort((a, b) => (a.publishAt ?? 0) - (b.publishAt ?? 0))
+  }
   if (!isFirebaseConfigured() || !getFirebaseDb()) {
     return Object.values(getMockLevelsMap())
       .filter((l) => l.status === 'published' && (l.publishAt == null || l.publishAt <= now))
       .sort((a, b) => (a.publishAt ?? 0) - (b.publishAt ?? 0))
   }
   const db = getFirebaseDb()!
-  const snap = await getDocs(collection(db, 'levels'))
+  const snap = await getDocs(query(collection(db, 'levels'), and(where('status', '==', 'published'), or(where('publishAt', '<=', now), where('publishAt', '==', null)))))
   return snap.docs
     .map((x) => docToLevel(x.id, x.data() as Record<string, unknown>))
     .filter((l) => l.status === 'published')
@@ -81,6 +94,11 @@ export async function listPublishedLevels(): Promise<Level[]> {
 }
 
 export async function getLevel(levelId: string): Promise<Level | null> {
+  if (supabase) {
+    const { data, error } = await supabase.from('levels').select('id,data').eq('id', levelId).maybeSingle()
+    checkDbError(error)
+    return data ? { ...data.data, id: data.id } as Level : null
+  }
   if (!isFirebaseConfigured() || !getFirebaseDb()) {
     const m = getMockLevelsMap()
     return m[levelId] ?? null
@@ -99,6 +117,12 @@ export async function createLevelDraft(input: {
   status: LevelStatus
 }): Promise<string> {
   const t = Date.now()
+  if (supabase) {
+    const id = crypto.randomUUID()
+    const { error } = await supabase.from('levels').insert({ id, data: { ...input, status: 'draft', frogCount: 0, createdAt: t, updatedAt: t } })
+    checkDbError(error)
+    return id
+  }
   if (!isFirebaseConfigured() || !getFirebaseDb()) {
     const id = `lvl_${t}`
     const level: Level = {
@@ -131,8 +155,16 @@ export async function createLevelDraft(input: {
 
 export async function updateLevel(
   levelId: string,
-  patch: Partial<Pick<Level, 'title' | 'imageUrl' | 'status' | 'publishAt' | 'frogCount'>>
+  patch: Partial<Pick<Level, 'title' | 'imageUrl' | 'status' | 'publishAt' | 'frogCount' | 'testedSignature'>>
 ) {
+  if (supabase) {
+    const current = await getLevel(levelId)
+    if (!current) throw new Error('Level nicht gefunden')
+    const { id: _id, ...data } = current
+    const { error } = await supabase.from('levels').update({ data: { ...data, ...patch, updatedAt: Date.now() } }).eq('id', levelId)
+    checkDbError(error)
+    return
+  }
   if (!isFirebaseConfigured() || !getFirebaseDb()) {
     const m = getMockLevelsMap()
     const cur = m[levelId]

@@ -12,6 +12,7 @@ import {
 import { getFirebaseDb, isFirebaseConfigured } from '../lib/firebase'
 import { LS_PROGRESS, readJson, writeJson } from '../lib/mockStorage'
 import type { UserProgress } from '../types/models'
+import { checkDbError, supabase } from '../lib/supabase'
 
 function progressDocId(uid: string, levelId: string) {
   return `${uid}__${levelId}`
@@ -30,6 +31,11 @@ function setMockProgress(p: UserProgress) {
 }
 
 export async function getProgress(uid: string, levelId: string): Promise<UserProgress | null> {
+  if (supabase) {
+    const { data, error } = await supabase.from('user_progress').select('data').eq('uid', uid).eq('level_id', levelId).maybeSingle()
+    checkDbError(error)
+    return data?.data as UserProgress ?? null
+  }
   if (!isFirebaseConfigured() || !getFirebaseDb()) {
     const m = getMockProgress()
     return m[progressDocId(uid, levelId)] ?? null
@@ -40,6 +46,7 @@ export async function getProgress(uid: string, levelId: string): Promise<UserPro
   if (!s.exists()) return null
   const d = s.data() as Record<string, unknown>
   return {
+    ...(d as unknown as UserProgress),
     uid: String(d.uid),
     levelId: String(d.levelId),
     startedAt: Number(d.startedAt),
@@ -140,6 +147,11 @@ export async function completeLevel(uid: string, levelId: string, durationMs: nu
 }
 
 export async function listCompletedForUser(uid: string): Promise<UserProgress[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('user_progress').select('data').eq('uid', uid)
+    checkDbError(error)
+    return (data ?? []).map(r => r.data as UserProgress).filter(p => p.completed)
+  }
   if (!isFirebaseConfigured() || !getFirebaseDb()) {
     return Object.values(getMockProgress()).filter((p) => p.uid === uid && p.completed)
   }
@@ -150,6 +162,7 @@ export async function listCompletedForUser(uid: string): Promise<UserProgress[]>
     .map((x) => {
       const d = x.data() as Record<string, unknown>
       return {
+        ...(d as unknown as UserProgress),
         uid: String(d.uid),
         levelId: String(d.levelId),
         startedAt: Number(d.startedAt),

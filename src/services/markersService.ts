@@ -1,11 +1,13 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { MOCK_DEMO_MARKERS } from '../data/mockLevel'
+import { MOCK_DEMO_MARKERS, MOCK_DEMO_LEVEL } from '../data/mockLevel'
 import { getFirebaseDb, isFirebaseConfigured } from '../lib/firebase'
 import { LS_MARKERS, readJson, writeJson } from '../lib/mockStorage'
 import type { FrogMarker } from '../types/models'
+import { checkDbError, supabase } from '../lib/supabase'
+import { validateMarkers } from '../lib/gameRules'
 
 function seedMockMarkers(): Record<string, FrogMarker[]> {
-  return { 'demo-moss-forest': [...MOCK_DEMO_MARKERS] }
+  return { [MOCK_DEMO_LEVEL.id]: [...MOCK_DEMO_MARKERS] }
 }
 
 function getMockMarkersMap(): Record<string, FrogMarker[]> {
@@ -31,6 +33,11 @@ function saveMockMarkersForLevel(levelId: string, markers: FrogMarker[]) {
 }
 
 export async function getMarkers(levelId: string): Promise<FrogMarker[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('level_frogs').select('markers').eq('level_id', levelId).maybeSingle()
+    checkDbError(error)
+    return data?.markers ?? []
+  }
   if (!isFirebaseConfigured() || !getFirebaseDb()) {
     const m = getMockMarkersMap()
     return m[levelId] ?? []
@@ -44,6 +51,12 @@ export async function getMarkers(levelId: string): Promise<FrogMarker[]> {
 }
 
 export async function saveMarkers(levelId: string, markers: FrogMarker[]) {
+  if (markers.length && !validateMarkers(markers)) throw new Error('Ungültige Fundstellen')
+  if (supabase) {
+    const { error } = await supabase.from('level_frogs').upsert({ level_id: levelId, markers })
+    checkDbError(error)
+    return
+  }
   if (!isFirebaseConfigured() || !getFirebaseDb()) {
     saveMockMarkersForLevel(levelId, markers)
     return

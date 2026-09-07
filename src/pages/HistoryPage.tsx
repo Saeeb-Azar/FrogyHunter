@@ -1,124 +1,43 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { MapScene } from '../components/history/MapScene'
-import { MAP_SNAKE_LEVEL_POINTS } from '../components/history/mapSnake'
-import type { MapLevelNode } from '../components/history/types'
 import { AppLayout } from '../components/layout/AppLayout'
-import { UserBar } from '../components/layout/UserBar'
-import { PageTransition } from '../components/ui/PageTransition'
-import { getLevel } from '../services/levelsService'
+import { GameDialog } from '../components/game/GameDialog'
+import { listPublishedLevels } from '../services/levelsService'
 import { listCompletedForUser } from '../services/progressService'
+import { formatTime } from '../lib/gameRules'
 import type { Level, UserProgress } from '../types/models'
-
+type Row = { level: Level; progress?: UserProgress }
 export function HistoryPage() {
   const { user } = useAuth()
-  const [rows, setRows] = useState<{ p: UserProgress; title: string }[]>([])
+  const [rows, setRows] = useState<Row[]>([])
+  const [selected, setSelected] = useState<Row | null>(null)
+  const [error, setError] = useState(false)
   const [loading, setLoading] = useState(true)
-
   useEffect(() => {
     if (!user) return
-    void (async () => {
-      setLoading(true)
-      const list = await listCompletedForUser(user.uid)
-      const enriched = await Promise.all(
-        list.map(async (p) => {
-          const lv: Level | null = await getLevel(p.levelId)
-          return { p, title: lv?.title ?? p.levelId }
-        })
-      )
-      enriched.sort((a, b) => (b.p.completedAt ?? 0) - (a.p.completedAt ?? 0))
-      setRows(enriched)
-      setLoading(false)
-    })()
+    let active = true
+    void Promise.all([listPublishedLevels(), listCompletedForUser(user.uid)]).then(([levels, results]) => {
+      if (active) setRows(levels.map(level => ({ level, progress: results.find(p => p.levelId === level.id) })))
+    }).catch(() => { if (active) setError(true) }).finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
   }, [user])
-
-  const nodes = useMemo<MapLevelNode[]>(() => {
-    const pickRoadPoint = (index: number) => {
-      const pts = MAP_SNAKE_LEVEL_POINTS
-      if (index < pts.length) return pts[index]
-      const loop = Math.floor(index / pts.length)
-      const inLoop = index % pts.length
-      const base = pts[inLoop]
-      return { x: base.x, y: Math.max(4, base.y - loop * 7) }
-    }
-
-    const completed = [...rows]
-      .sort((a, b) => (a.p.completedAt ?? 0) - (b.p.completedAt ?? 0))
-      .map((row, index) => {
-        const point = pickRoadPoint(index)
-        return {
-          id: row.p.levelId,
-          levelNumber: index + 1,
-          title: row.title,
-          x: point.x,
-          y: point.y,
-          status: 'completed' as const,
-          completedAt: row.p.completedAt,
-          durationMs: row.p.durationMs,
-          clicks: row.p.clicks,
-          misses: row.p.misses,
-          foundCount: row.p.foundFroggys.length,
-        }
-      })
-
-    const nextNumber = completed.length + 1
-    const currentPoint = pickRoadPoint(completed.length)
-    const current: MapLevelNode = {
-      id: 'current-level-mock',
-      levelNumber: nextNumber,
-      title: 'Aktuelles Abenteuer',
-      x: currentPoint.x,
-      y: currentPoint.y,
-      status: 'current',
-      completedAt: null,
-      durationMs: null,
-      clicks: 0,
-      misses: 0,
-      foundCount: 0,
-    }
-    const lockedPoint = pickRoadPoint(completed.length + 1)
-    const locked: MapLevelNode = {
-      id: 'locked-level-mock',
-      levelNumber: nextNumber + 1,
-      title: 'Nebelmoor (bald)',
-      x: lockedPoint.x,
-      y: lockedPoint.y,
-      status: 'locked',
-      completedAt: null,
-      durationMs: null,
-      clicks: 0,
-      misses: 0,
-      foundCount: 0,
-    }
-
-    return [...completed, current, locked]
-  }, [rows])
-
-  return (
-    <AppLayout showBack backTo="/">
-      <UserBar />
-      <PageTransition>
-        <div className="history-page">
-          <div className="history-forest__intro">
-            <h2 className="h2 h2--display">Deine Froggy-Reise</h2>
-            <p className="muted">Waldkarte statt Liste: Tippe auf Stationen entlang des Moospfads.</p>
-          </div>
-
-          {loading && <div className="spinner" />}
-
-          {!loading && rows.length === 0 && (
-            <div className="empty-state card card--pad">
-              <p>Noch keine abgeschlossenen Level auf deiner Karte.</p>
-              <Link to="/play" className="btn btn--primary" style={{ marginTop: '1.15rem', display: 'inline-flex' }}>
-                Jetzt spielen
-              </Link>
-            </div>
-          )}
-
-          {!loading && <MapScene nodes={nodes} />}
-        </div>
-      </PageTransition>
-    </AppLayout>
-  )
+  const x = (i: number) => [100, 280, 230, 110][i % 4]
+  const height = Math.max(500, rows.length * 170 + 230)
+  const points = Array.from({ length: rows.length + 1 }, (_, i) => ({ x: x(i), y: 80 + i * 170 }))
+  const path = points.map((p, i) => i ? `C ${points[i - 1].x} ${p.y - 70}, ${p.x} ${p.y - 90}, ${p.x} ${p.y}` : `M ${p.x} ${p.y}`).join(' ')
+  return <AppLayout mainClass="hunt-history" shellClass="hunt-world" hideAmbient>
+    <Link to="/" className="hunt-back">← Zur Lobby</Link><h1>Deine Froggy Reise</h1><p className="hunt-subtitle">Jede Woche ein neues Stück Abenteuer.</p>
+    {loading && <div className="spinner" />}
+    {error ? <p role="alert" className="hunt-notice">Deine Reise konnte nicht geladen werden. <button onClick={() => location.reload()}>Erneut versuchen</button></p> : !loading && <div className="hunt-map" style={{ height }}>
+      <svg viewBox={`0 0 400 ${height}`} preserveAspectRatio="none" aria-hidden><path d={path} fill="none" stroke="#50351d" strokeWidth="44" strokeLinecap="round" /><path d={path} fill="none" stroke="#d7b379" strokeWidth="32" strokeLinecap="round" /><path d={path} fill="none" stroke="#f2d4a0" strokeWidth="3" strokeDasharray="4 13" /></svg>
+      {rows.map((row, i) => <button key={row.level.id} className={`hunt-map-node ${row.progress ? 'complete' : ''}`} style={{ left: `${x(i) / 4}%`, top: 80 + i * 170 }} onClick={() => setSelected(row)} aria-label={`Level ${i + 1}: ${row.level.title}${row.progress ? ', abgeschlossen' : ''}`}><b>{i + 1}</b><span>{row.level.title}</span>{row.progress && <small>★ ★ ★</small>}</button>)}
+      <div className="hunt-map-future" style={{ left: `${x(rows.length) / 4}%`, top: 80 + rows.length * 170 }}>⌁<span>Fortsetzung am Mittwoch</span></div>
+    </div>}
+    <GameDialog open={Boolean(selected)} label={selected?.level.title ?? 'Level Details'} onCancel={() => setSelected(null)}>
+      {selected && <><p className="hunt-eyebrow">DEIN WOCHENABENTEUER</p><h2>{selected.level.title}</h2>
+        {selected.progress ? <><p>Abgeschlossen am {new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeZone: 'Europe/Berlin' }).format(selected.progress.completedAt ?? 0)}</p><strong className="hunt-victory-time">{formatTime(selected.progress.bestDurationMs ?? selected.progress.durationMs ?? 0)}</strong><p>Persönliche Bestzeit</p><div className="hunt-result-grid"><span><b>{selected.progress.foundFroggys.length}/{selected.level.frogCount}</b>Froggys</span><span><b>{selected.progress.misses}</b>Fehlklicks</span><span><b>{selected.progress.hintsUsed ?? 0}</b>Hinweise</span></div><p>Letzter Versuch: {formatTime(selected.progress.durationMs ?? 0)} · {selected.progress.clicks} Klicks · {selected.progress.xp ?? 100} XP</p></> : <p>{selected.level.frogCount} Froggys warten auf dich.</p>}
+        <Link className="hunt-primary" to={`/play?level=${encodeURIComponent(selected.level.id)}`}>{selected.progress ? 'Noch einmal spielen' : 'Level spielen'}</Link><button className="hunt-text-button" onClick={() => setSelected(null)}>Zurück zur Karte</button></>}
+    </GameDialog>
+  </AppLayout>
 }

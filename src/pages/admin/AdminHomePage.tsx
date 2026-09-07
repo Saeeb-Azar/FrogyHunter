@@ -15,8 +15,7 @@ export function AdminHomePage() {
         </li>
       </ul>
       <p className="muted" style={{ fontSize: '0.85rem', marginBottom: 0 }}>
-        Statistik-Aggregation: Collection <code>levelStats</code> (siehe README) – wird bei Abschlüssen befüllt, sobald Firebase aktiv
-        ist.
+        Ein neues Level bleibt zunächst ein Entwurf. Nach einem vollständigen Spieltest kannst du es sofort freigeben oder für Mittwoch planen.
       </p>
     </div>
   )

@@ -11,6 +11,7 @@ import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut as fbS
 import type { User as FbUser } from 'firebase/auth'
 import { getFirebaseAuth, isFirebaseConfigured } from '../lib/firebase'
 import { upsertUserFromAuth } from '../services/usersService'
+import { supabase, checkDbError } from '../lib/supabase'
 
 export interface AuthUser {
   uid: string
@@ -44,7 +45,7 @@ const DEMO_UID = 'local-demo-user'
 function demoAuthUser(): AuthUser {
   return {
     uid: DEMO_UID,
-    displayName: 'Demo-Froschfreund',
+    displayName: localStorage.getItem('froggy_display_name') ?? 'Demo-Froschfreund',
     email: 'demo@froggy.hunt',
     photoURL: null,
   }
@@ -53,9 +54,18 @@ function demoAuthUser(): AuthUser {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
-  const demoMode = !isFirebaseConfigured()
+  const demoMode = !supabase && !isFirebaseConfigured()
 
   useEffect(() => {
+    if (supabase) {
+      const mapSession = (u: import('@supabase/supabase-js').User | undefined) => {
+        setUser(u ? { uid: u.id, displayName: u.user_metadata.display_name ?? u.user_metadata.full_name ?? 'Froschfreund', email: u.email ?? null, photoURL: u.user_metadata.avatar_url ?? null } : null)
+        setLoading(false)
+      }
+      void supabase.auth.getSession().then(({ data }) => mapSession(data.session?.user)).catch(() => setLoading(false))
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => mapSession(session?.user))
+      return () => data.subscription.unsubscribe()
+    }
     if (demoMode) {
       if (localStorage.getItem('froggy_demo_session') === '1') {
         setUser(demoAuthUser())
@@ -97,6 +107,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [demoMode])
 
   const signInWithGoogle = useCallback(async () => {
+    if (supabase) {
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: new URL(import.meta.env.BASE_URL, location.origin).href } })
+      checkDbError(error)
+      return
+    }
     const auth = getFirebaseAuth()
     if (!auth) throw new Error('Firebase nicht konfiguriert')
     const provider = new GoogleAuthProvider()
@@ -110,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = useCallback(async () => {
+    if (supabase) { const { error } = await supabase.auth.signOut(); checkDbError(error); setUser(null); return }
     if (demoMode) {
       localStorage.removeItem('froggy_demo_session')
       setUser(null)

@@ -12,13 +12,9 @@ export async function resolveCurrentLevel(uid: string): Promise<CurrentLevelResu
   const levels = await listPublishedLevels()
   if (!levels.length) return { level: null, isReplay: false, allComplete: true }
 
-  for (const l of levels) {
-    const p = await getProgress(uid, l.id)
-    if (!p || !p.completed) return { level: l, isReplay: false, allComplete: false }
-  }
-
   const last = levels[levels.length - 1]
-  return { level: last, isReplay: true, allComplete: true }
+  const p = await getProgress(uid, last.id)
+  return { level: last, isReplay: Boolean(p?.completed), allComplete: Boolean(p?.completed) }
 }
 
 export async function enrichLevel(level: Level): Promise<Level> {

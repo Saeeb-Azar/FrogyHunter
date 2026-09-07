@@ -1,15 +1,17 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { AppLayout } from '../components/layout/AppLayout'
 import { UserBar } from '../components/layout/UserBar'
 import { PageTransition } from '../components/ui/PageTransition'
 import { setMockAdminFlag } from '../services/adminService'
-import { loadUserSettingsRemote, saveUserSettingsRemote } from '../services/usersService'
+import { loadUserSettingsRemote, saveUserSettingsRemote, saveDisplayName } from '../services/usersService'
 import { useSettingsStore } from '../stores/settingsStore'
 
 export function SettingsPage() {
   const { user, demoMode } = useAuth()
+  const [name, setName] = useState(user?.displayName ?? '')
+  const [message, setMessage] = useState('')
   const musicEnabled = useSettingsStore((s) => s.musicEnabled)
   const sfxEnabled = useSettingsStore((s) => s.sfxEnabled)
   const volume = useSettingsStore((s) => s.volume)
@@ -29,20 +31,18 @@ export function SettingsPage() {
   useEffect(() => {
     if (!user || demoMode) return
     void (async () => {
-      const remote = await loadUserSettingsRemote(user.uid)
-      if (remote) hydrateFromRemote(remote)
+      try {
+        const remote = await loadUserSettingsRemote(user.uid)
+        if (remote) hydrateFromRemote(remote)
+      } catch { setMessage('Einstellungen konnten nicht vom Konto geladen werden.') }
     })()
   }, [user, demoMode, hydrateFromRemote])
 
   const persistRemote = () => {
     if (!user || demoMode) return
-    void saveUserSettingsRemote(user.uid, {
-      musicEnabled,
-      sfxEnabled,
-      volume,
-      reduceMotion,
-      theme,
-    })
+    const state = useSettingsStore.getState()
+    void saveUserSettingsRemote(user.uid, { musicEnabled: state.musicEnabled, sfxEnabled: state.sfxEnabled, volume: state.volume, reduceMotion: state.reduceMotion, theme: state.theme })
+      .then(() => setMessage('Einstellungen gespeichert.')).catch(() => setMessage('Auf diesem Gerät gespeichert. Die Synchronisierung ist fehlgeschlagen.'))
   }
 
   return (
@@ -51,10 +51,12 @@ export function SettingsPage() {
       <PageTransition>
         <h2 className="h2">Einstellungen</h2>
         <p className="muted" style={{ marginBottom: '1.5rem' }}>
-          Lokal gespeichert; mit Firebase werden Einstellungen zusätzlich mit dem Konto synchronisiert.
+          Stelle Musik, Soundeffekte und Bewegung so ein, wie es dir gefällt.
         </p>
 
         <div className="card card--pad" style={{ maxWidth: 520 }}>
+          <div className="field"><label htmlFor="display-name">Dein Anzeigename</label><input id="display-name" className="input" value={name} maxLength={30} onChange={e => setName(e.target.value)} /><button className="btn btn--ghost" onClick={() => { if (user) void saveDisplayName(user.uid, name).then(() => location.reload()).catch(() => setMessage('Der Name konnte nicht gespeichert werden.')) }}>Namen speichern</button></div>
+          {message && <p role="status">{message}</p>}
           <ToggleRow
             label="Musik"
             checked={musicEnabled}

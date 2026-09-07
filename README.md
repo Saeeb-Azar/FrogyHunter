@@ -1,6 +1,8 @@
 # Froggy Hunt
 
-Modernes **Hidden-Object**-Webspiel (React + Vite + TypeScript): Finde alle versteckten Froggys im Bild. Premium-Dark-UI mit Neon-Lime-Akzenten, Framer Motion, optional Firebase (Auth, Firestore, Storage) – mit **Mock-Fallback**, wenn keine `.env` gesetzt ist.
+Mobiles **Hidden Object Game** (React + Vite + TypeScript): Finde die versteckten Froggys direkt im Bild. Mit animiertem 3D Froggy, Sound, wöchentlichen Leveln, Level Studio und persönlicher Reisekarte. Supabase ist optional vorbereitet; die vorhandene Firebase Anbindung bleibt erhalten. Ohne Cloud Konfiguration läuft die ausdrücklich gekennzeichnete lokale Demo.
+
+Aktueller Funktionsumfang, Einrichtung und verbleibende Launch Prüfungen: **[V1 Übergabe](docs/RELEASE_V1.md)**. Cloud Migrationen und Google OAuth wurden nicht automatisch auf einem Projekt eingerichtet.
 
 ## Schnellstart
 
@@ -69,7 +71,7 @@ VITE_ADMIN_UIDS=firebaseUid1,firebaseUid2
 
 ## Sound
 
-Dateien unter `src/assets/audio/` ablegen und in `src/audio/soundManager.ts` in `paths` eintragen.
+Originale Musik und Spieleffekte werden mit Web Audio erzeugt. Sie starten nach der ersten Interaktion. Musik, SFX und Lautstärke lassen sich live ändern. Die 3D Figur wird über Three.js bei Bedarf geladen.
 
 ## Build
 

@@ -1,5 +1,6 @@
 import { doc, getDoc } from 'firebase/firestore'
 import { getFirebaseDb, isFirebaseConfigured } from '../lib/firebase'
+import { checkDbError, supabase } from '../lib/supabase'
 
 const LS_ADMIN = 'froggy_mock_is_admin'
 
@@ -14,6 +15,11 @@ function envAdminUids(): Set<string> {
 }
 
 export async function isUserAdmin(uid: string): Promise<boolean> {
+  if (supabase) {
+    const { data, error } = await supabase.from('game_admins').select('uid').eq('uid', uid).maybeSingle()
+    checkDbError(error)
+    return Boolean(data)
+  }
   if (envAdminUids().has(uid)) return true
   if (!isFirebaseConfigured() || !getFirebaseDb()) {
     return localStorage.getItem(LS_ADMIN) === '1'

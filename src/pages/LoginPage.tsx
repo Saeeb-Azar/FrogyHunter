@@ -34,10 +34,10 @@ export function LoginPage() {
             🐸
           </div>
           <h1 className="h1">
-            Froggy <span>Hunt</span>
+            FroggySmill <span>Hunt</span>
           </h1>
           <p className="muted" style={{ marginBottom: '1.5rem' }}>
-            Einmal anmelden – dein Fortschritt bleibt im Moos gespeichert.
+            {demoMode ? 'Finde fünf Froggys im Waldteich. Die Demo speichert deine Reise auf diesem Gerät.' : 'Einmal anmelden – deine Reise und deine Bestzeiten bleiben bei dir.'}
           </p>
           {demoMode && (
             <p className="badge badge--warn" style={{ display: 'inline-block', marginBottom: '1rem' }}>

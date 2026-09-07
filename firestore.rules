@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function admin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function playable(levelId) {
+      let level = get(/databases/$(database)/documents/levels/$(levelId)).data;
+      return level.status == 'published' && (level.publishAt == null || level.publishAt <= request.time.toMillis());
+    }
+    match /admins/{uid} { allow read: if signedIn() && request.auth.uid == uid; allow write: if false; }
+    match /users/{uid} { allow read, create, update: if signedIn() && request.auth.uid == uid; }
+    match /levels/{id} {
+      allow read: if admin() || (signedIn() && resource.data.status == 'published' && (resource.data.publishAt == null || resource.data.publishAt <= request.time.toMillis()));
+      allow create, update: if admin();
+    }
+    match /levelMarkers/{id} { allow read: if signedIn() && (admin() || playable(id)); allow create, update: if admin(); }
+    match /userProgress/{id} {
+      allow read: if signedIn() && (resource == null || resource.data.uid == request.auth.uid);
+      allow create, update: if signedIn() && request.resource.data.uid == request.auth.uid
+        && id == request.auth.uid + '__' + request.resource.data.levelId
+        && playable(request.resource.data.levelId)
+        && (resource == null || resource.data.uid == request.auth.uid);
+    }
+    match /levelAttempts/{id} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid && playable(request.resource.data.levelId);
+      allow update: if signedIn() && resource.data.uid == request.auth.uid && request.resource.data == resource.data;
+    }
+  }
+}
