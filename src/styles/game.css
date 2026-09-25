@@ -801,3 +801,10 @@ img { -webkit-user-drag: none; user-select: none; }
 /* 3D-Froggy blendet sich ein, sobald WebGL bereit ist – kein Platzhalter-Emoji */
 .froggy3d canvas { opacity: 0; transition: opacity .5s ease; }
 .froggy3d.is-ready canvas { opacity: 1; }
+
+/* Buttons stehen ruhig: kein Schweben/Pulsieren, fester Schatten, nur Druck-Feedback */
+.play-asset__body, .menu-btn img, .map-play img { animation: none !important; }
+.play-asset::before, .map-play::before, .menu-btn::after { animation: none !important; opacity: .9; }
+.play-asset img, .menu-btn img, .map-play img { filter: drop-shadow(0 5px 5px #0007); }
+.play-asset:active .play-asset__body, .map-play:active img { transform: scale(.94) translateY(2px); transition: transform .08s; }
+.menu-btn:active img { transform: scale(.92) translateY(2px); transition: transform .08s; }
