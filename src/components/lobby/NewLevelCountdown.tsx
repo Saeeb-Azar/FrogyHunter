@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { formatWednesdayCountdownDe, msUntilNextWednesdayBerlin } from '../../lib/wednesdayCountdownBerlin'
 
-/** Live-Countdown bis zum nächsten Mittwoch 00:00 Europe/Berlin. */
-export function NewLevelCountdown() {
+/** Live-Countdown bis zum nächsten Mittwoch 18:00 Europe/Berlin. */
+export function NewLevelCountdown({ className = 'countdown' }: { className?: string }) {
   const [text, setText] = useState(() => formatWednesdayCountdownDe(msUntilNextWednesdayBerlin()))
 
   useEffect(() => {
@@ -15,8 +15,8 @@ export function NewLevelCountdown() {
   }, [])
 
   return (
-    <p className="lobby-fh__newlvl-countdown" aria-live="polite" aria-atomic="true">
+    <span className={className} role="timer">
       {text}
-    </p>
+    </span>
   )
 }

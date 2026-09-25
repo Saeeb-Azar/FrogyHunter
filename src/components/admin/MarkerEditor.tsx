@@ -33,7 +33,7 @@ export function MarkerEditor({ imageUrl, markers, onChange }: Props) {
 
   return (
     <div>
-      <div className="muted" style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+      <div className="studio-help" style={{ marginBottom: "0.75rem", fontSize: "0.95rem" }}>
         Klicke auf das Bild, um eine Fundstelle zu setzen. Wähle einen Kreis, um Radius anzupassen oder zu löschen.
       </div>
       <div className="marker-editor card" style={{ padding: '0.5rem' }}>

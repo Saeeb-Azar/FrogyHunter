@@ -1,22 +1,45 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { playSound } from '../../audio/soundManager'
 import { findMarkerAtClick } from '../../lib/hitTest'
-import { createRun, formatTime, MAX_HINTS, scoreRun, validateMarkers } from '../../lib/gameRules'
+import { ASSET } from '../../lib/gameAssets'
+import { createRun, formatTime, MAX_HINTS, scoreRun, starsForRun, validateMarkers } from '../../lib/gameRules'
 import { getProgress } from '../../services/progressService'
 import { saveRun } from '../../services/runService'
 import { useSettingsStore } from '../../stores/settingsStore'
 import type { FrogMarker, GameRun, Level } from '../../types/models'
-import { GameDialog } from './GameDialog'
+import { FrogPlank } from '../game-ui/FrogPlank'
+import { GameModal } from '../game-ui/GameModal'
+import { PlayAssetButton, StoneButton } from '../game-ui/PlayButtons'
+import { AssetRoundButton, WoodRoundButton } from '../game-ui/WoodButton'
+import { VictoryOverlay } from './VictoryOverlay'
 
-interface Props { level: Level; markers: FrogMarker[]; uid: string; testMode?: boolean; onExitTest?: () => void; onTestComplete?: () => Promise<void> }
+interface Props {
+  level: Level
+  markers: FrogMarker[]
+  uid: string
+  levelNumber?: number
+  testMode?: boolean
+  onExitTest?: () => void
+  onTestComplete?: () => Promise<void>
+}
 
-export function PlayView({ level, markers, uid, testMode, onExitTest, onTestComplete }: Props) {
+type Flyer = { key: number; from: { x: number; y: number }; to: { x: number; y: number } }
+const ZOOMS = [1, 2, 3]
+/** Rahmenstärke von play_pic.png in px */
+const FRAME = 16
+
+export function PlayView({ level, markers, uid, levelNumber, testMode, onExitTest, onTestComplete }: Props) {
+  const nav = useNavigate()
   const [run, setRun] = useState<GameRun>(createRun)
   const current = useRef(run)
-  const [initialized, setInitialized] = useState(false)
+  const [initialized, setInitialized] = useState(Boolean(testMode))
+  const [wasCompleted, setWasCompleted] = useState(false)
   const [imageReady, setImageReady] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [aspect, setAspect] = useState(1)
+  const [box, setBox] = useState({ w: 0, h: 0 })
+  const areaRef = useRef<HTMLDivElement>(null)
   const [running, setRunning] = useState(false)
   const runningRef = useRef(false)
   const started = useRef(0)
@@ -28,9 +51,12 @@ export function PlayView({ level, markers, uid, testMode, onExitTest, onTestComp
   const [zoom, setZoom] = useState(1)
   const [hint, setHint] = useState<{ x: number; y: number } | null>(null)
   const [feedback, setFeedback] = useState<{ x: number; y: number; hit: boolean; key: number } | null>(null)
+  const [flyers, setFlyers] = useState<Flyer[]>([])
+  const [pulseSlot, setPulseSlot] = useState<number | null>(null)
+  const [shake, setShake] = useState(0)
   const [fullscreen, setFullscreen] = useState(false)
   const imageRef = useRef<HTMLImageElement>(null)
-  const rootRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const gesture = useRef<{ x: number; y: number; moved: boolean } | null>(null)
   const queue = useRef(Promise.resolve())
   const latestSave = useRef(0)
@@ -47,13 +73,12 @@ export function PlayView({ level, markers, uid, testMode, onExitTest, onTestComp
   }, [level.id, uid, testMode])
   useEffect(() => {
     let active = true
-    if (testMode) { setInitialized(true); return }
+    if (testMode) return
     void getProgress(uid, level.id).then(p => {
       if (!active) return
+      setWasCompleted(Boolean(p?.completed))
       if (p?.activeAttempt) replaceRun(p.activeAttempt)
-      else if (p?.completed) replaceRun({ id: p.lastAttemptId ?? crypto.randomUUID(), startedAt: p.startedAt,
-        durationMs: p.durationMs ?? 0, clicks: p.clicks, misses: p.misses, hintsUsed: p.hintsUsed ?? 0,
-        foundFroggys: p.foundFroggys, completed: true })
+      else if (p?.completed) replaceRun(createRun())
       else if (p) replaceRun({ ...createRun(), startedAt: p.startedAt, durationMs: p.durationMs ?? 0,
         foundFroggys: p.foundFroggys, clicks: p.clicks, misses: p.misses })
       setInitialized(true)
@@ -97,21 +122,41 @@ export function PlayView({ level, markers, uid, testMode, onExitTest, onTestComp
   }, [running, persist, snapshot])
   useEffect(() => {
     if (!hint) return
-    const timeout = setTimeout(() => setHint(null), 2200)
+    const timeout = setTimeout(() => setHint(null), 2600)
     return () => clearTimeout(timeout)
   }, [hint])
   useEffect(() => {
     if (!feedback) return
-    const timeout = setTimeout(() => setFeedback(null), 700)
+    const timeout = setTimeout(() => setFeedback(null), 800)
     return () => clearTimeout(timeout)
   }, [feedback])
+
+  // Bild so groß wie möglich in den Rahmen einpassen (Hoch- und Querformat)
+  useLayoutEffect(() => {
+    const el = areaRef.current
+    if (!el) return
+    const measure = () => setBox({ w: el.clientWidth - FRAME * 2, h: el.clientHeight - FRAME * 2 })
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [initialized])
+  const fitW = box.w && box.h ? Math.min(box.w, box.h * aspect) : 0
+
   function resume() {
     if (!imageReady || !initialized || !validateMarkers(markers) || current.current.completed) return
     started.current = performance.now()
     runningRef.current = true
     setHasStarted(true)
     setRunning(true)
-    playSound('ui')
+    playSound('start')
+  }
+  function flyToSlot(clientX: number, clientY: number, slot: number) {
+    const target = document.querySelector(`.play-bottom [data-slot="${slot}"]`)?.getBoundingClientRect()
+    if (!target || reduced) { setPulseSlot(slot); return }
+    const key = Date.now()
+    setFlyers(f => [...f, { key, from: { x: clientX - 22, y: clientY - 24 }, to: { x: target.left + target.width / 2 - 22, y: target.top + target.height / 2 - 24 } }])
+    setTimeout(() => { setFlyers(f => f.filter(x => x.key !== key)); setPulseSlot(slot) }, 650)
   }
   function clickImage(clientX: number, clientY: number) {
     if (!runningRef.current || !imageRef.current || current.current.completed) return
@@ -122,15 +167,15 @@ export function PlayView({ level, markers, uid, testMode, onExitTest, onTestComp
     const next = snapshot()
     started.current = performance.now()
     next.clicks += 1
-    if (hit) { next.foundFroggys = [...next.foundFroggys, hit.id]; playSound('found') }
-    else { next.misses += 1; playSound('miss') }
+    if (hit) { next.foundFroggys = [...next.foundFroggys, hit.id]; playSound('found'); flyToSlot(clientX, clientY, next.foundFroggys.length - 1) }
+    else { next.misses += 1; playSound('miss'); setShake(s => s + 1) }
     setFeedback({ x: (clientX - rect.left) / rect.width, y: (clientY - rect.top) / rect.height, hit: Boolean(hit), key: Date.now() })
     if (next.foundFroggys.length === markers.length) {
       next.completed = true
       runningRef.current = false
       setRunning(false)
       setHint(null)
-      playSound('win')
+      setTimeout(() => playSound('win'), 400)
       if (testMode && onTestComplete) {
         setTestSaving(true)
         void onTestComplete().finally(() => setTestSaving(false))
@@ -149,12 +194,24 @@ export function PlayView({ level, markers, uid, testMode, onExitTest, onTestComp
     replaceRun(next)
     setHint({ x: Math.max(.16, Math.min(.84, m.x + .055)), y: Math.max(.14, Math.min(.86, m.y - .045)) })
     setZoom(1)
-    playSound('ui')
+    playSound('hint')
     persist(next)
+  }
+  function cycleZoom() {
+    const el = scrollRef.current
+    const next = ZOOMS[(ZOOMS.indexOf(zoom) + 1) % ZOOMS.length]
+    if (el) {
+      const cx = (el.scrollLeft + el.clientWidth / 2) / Math.max(1, el.scrollWidth)
+      const cy = (el.scrollTop + el.clientHeight / 2) / Math.max(1, el.scrollHeight)
+      requestAnimationFrame(() => { el.scrollLeft = cx * el.scrollWidth - el.clientWidth / 2; el.scrollTop = cy * el.scrollHeight - el.clientHeight / 2 })
+    }
+    setZoom(next)
+    playSound('ui')
   }
   function replay() {
     const next = createRun()
     replaceRun(next)
+    setWasCompleted(true)
     setHasStarted(false)
     setRunning(false)
     runningRef.current = false
@@ -165,57 +222,92 @@ export function PlayView({ level, markers, uid, testMode, onExitTest, onTestComp
   async function toggleFullscreen() {
     try {
       if (document.fullscreenElement) await document.exitFullscreen()
-      else if (rootRef.current?.requestFullscreen) await rootRef.current.requestFullscreen()
-    } catch { /* Responsive full-width fallback on unsupported browsers. */ }
+      else await document.documentElement.requestFullscreen?.()
+    } catch { /* iOS Safari: kein Element-Vollbild, Layout nutzt bereits den ganzen Bildschirm. */ }
   }
-  if (loadError) return <div role="alert" className="hunt-notice">Dein Spielstand konnte nicht geladen werden. <button className="btn" onClick={() => location.reload()}>Erneut laden</button></div>
-  if (!initialized) return <div className="spinner" aria-label="Spielstand laden" />
-  if (!validateMarkers(markers)) return <div className="hunt-notice" role="alert">Dieses Level ist noch nicht spielbereit. Bitte die Fundstellen im Editor prüfen.</div>
-  return <div ref={rootRef} className={`hunt-game${reduced ? ' reduced-motion' : ''}`}>
-    <header className="hunt-hud">
-      <button type="button" className="hunt-icon-button" onClick={pause} disabled={!running} aria-label="Spiel pausieren">Ⅱ</button>
-      <div><span className="hunt-eyebrow">{testMode ? 'TESTMODUS' : level.title}</span><strong className="hunt-timer">{formatTime(run.durationMs)}</strong></div>
-      <span className="hunt-count" aria-live="polite">{run.foundFroggys.length} / {markers.length} 🐸</span>
+
+  if (loadError) return <div className="play-screen"><div role="alert" className="wood-panel lobby-notice"><div className="wood-panel__inner"><p>Dein Spielstand konnte nicht geladen werden.</p><StoneButton size="sm" onClick={() => location.reload()}>Erneut laden</StoneButton></div></div></div>
+  if (!initialized) return <div className="loading-frog" aria-label="Spielstand laden"><i aria-hidden>🐸</i>Spielstand wird geladen …</div>
+  if (!validateMarkers(markers)) return <div className="play-screen"><div className="wood-panel lobby-notice" role="alert"><div className="wood-panel__inner"><p>Dieses Level ist noch nicht spielbereit. Bitte die Fundstellen im Editor prüfen.</p></div></div></div>
+
+  const foundCount = run.foundFroggys.length
+  const hintsLeft = MAX_HINTS - run.hintsUsed
+  const title = testMode ? 'TESTMODUS' : levelNumber ? `LEVEL ${levelNumber} · ${level.title}` : level.title
+
+  return <div className={`play-screen${reduced ? ' reduced-motion' : ''}`}>
+    <header className="play-hud">
+      <AssetRoundButton src={ASSET.pause} label="Spiel pausieren" onClick={pause} disabled={!running} />
+      <div className="play-hud__center">
+        <span className="play-hud__title">{title}</span>
+        <strong className="play-timer" role="timer" aria-label={`Zeit ${formatTime(run.durationMs)}`}>{formatTime(run.durationMs)}</strong>
+      </div>
+      {document.fullscreenEnabled
+        ? <AssetRoundButton src={ASSET.fullscreen} label={fullscreen ? 'Vollbild verlassen' : 'Vollbild'} onClick={() => void toggleFullscreen()} active={fullscreen} />
+        : <span style={{ width: 58 }} />}
     </header>
-    <div className="hunt-image-scroll">
-      <div className={`hunt-image-board${!running && !run.completed ? ' is-covered' : ''}`} style={{ width: `${zoom * 100}%` }}
-        onPointerDown={e => { gesture.current = { x: e.clientX, y: e.clientY, moved: false } }}
-        onPointerMove={e => { if (gesture.current && Math.hypot(e.clientX - gesture.current.x, e.clientY - gesture.current.y) > 8) gesture.current.moved = true }}
-        onPointerCancel={() => { gesture.current = null }}
-        onPointerUp={e => { if (gesture.current && !gesture.current.moved) clickImage(e.clientX, e.clientY); gesture.current = null }}>
-        <img ref={imageRef} src={level.imageUrl} alt={`Suchbild: ${level.title}. Finde ${markers.length} versteckte Froggys.`} draggable={false}
-          onLoad={() => { setImageReady(true); setImageError(false) }} onError={() => { setImageError(true); setImageReady(false); pause() }} />
-        {markers.filter(m => run.foundFroggys.includes(m.id)).map(m => <span key={m.id} className="hunt-found" style={{ left: `${m.x * 100}%`, top: `${m.y * 100}%`, width: `${m.radius * 200}%` }} aria-hidden>✓</span>)}
-        {hint && <span className="hunt-hint-zone" style={{ left: `${hint.x * 100}%`, top: `${hint.y * 100}%` }} aria-hidden />}
-        {feedback && <span key={feedback.key} className={`hunt-tap-feedback ${feedback.hit ? 'hit' : 'miss'}`} style={{ left: `${feedback.x * 100}%`, top: `${feedback.y * 100}%` }} aria-hidden>{feedback.hit ? '✦' : '×'}</span>}
+
+    <div className="play-area" ref={areaRef}>
+    <div className="play-field" style={fitW ? { width: fitW + FRAME * 2, height: fitW / aspect + FRAME * 2 } : { width: '100%', height: '100%' }}>
+      <div className="play-field__scroll" ref={scrollRef}>
+        <div key={shake} className={`play-board${!running && !run.completed ? ' is-covered' : ''}${shake ? ' is-shake' : ''}`}
+          style={{ width: fitW ? fitW * zoom : '100%' }}
+          onPointerDown={e => { gesture.current = { x: e.clientX, y: e.clientY, moved: false } }}
+          onPointerMove={e => { if (gesture.current && Math.hypot(e.clientX - gesture.current.x, e.clientY - gesture.current.y) > 8) gesture.current.moved = true }}
+          onPointerCancel={() => { gesture.current = null }}
+          onPointerUp={e => { if (gesture.current && !gesture.current.moved) clickImage(e.clientX, e.clientY); gesture.current = null }}>
+          <img ref={imageRef} src={level.imageUrl} alt={`Suchbild: ${level.title}. Finde ${markers.length} versteckte Froggys.`} draggable={false}
+            onLoad={e => { const i = e.currentTarget; setAspect(i.naturalWidth / Math.max(1, i.naturalHeight)); setImageReady(true); setImageError(false) }}
+            onError={() => { setImageError(true); setImageReady(false); pause() }} />
+          {markers.filter(m => run.foundFroggys.includes(m.id)).map(m => <span key={m.id} className="found-ring" style={{ left: `${m.x * 100}%`, top: `${m.y * 100}%`, width: `${Math.max(m.radius * 200, 6)}%` }} aria-hidden />)}
+          {hint && <span className="hint-zone" style={{ left: `${hint.x * 100}%`, top: `${hint.y * 100}%` }} aria-hidden />}
+          {feedback && <span key={feedback.key} className={`tap-burst ${feedback.hit ? 'hit' : 'miss'}`} style={{ left: `${feedback.x * 100}%`, top: `${feedback.y * 100}%` }} aria-hidden><span>{feedback.hit ? '+1' : '✕'}</span></span>}
+        </div>
       </div>
     </div>
-    <footer className="hunt-tools">
-      <button className="hunt-tool" onClick={useHint} disabled={!running || run.hintsUsed >= MAX_HINTS}>⌕ <span>Hinweis <small>{MAX_HINTS - run.hintsUsed}/{MAX_HINTS}</small></span></button>
-      <div className="hunt-zoom-controls" aria-label="Bild vergrößern"><button onClick={() => setZoom(z => Math.max(1, z - .5))} disabled={zoom <= 1} aria-label="Verkleinern">−</button><span>{zoom}×</span><button onClick={() => setZoom(z => Math.min(3, z + .5))} disabled={zoom >= 3} aria-label="Vergrößern">+</button></div>
-      {document.fullscreenEnabled && <button className="hunt-tool" onClick={() => void toggleFullscreen()} aria-label={fullscreen ? 'Vollbild verlassen' : 'Vollbild'}>⛶</button>}
-    </footer>
-    <div className="hunt-frog-slots" aria-label={`${run.foundFroggys.length} von ${markers.length} Froggys gefunden`}>{markers.map(m => <span key={m.id} className={run.foundFroggys.includes(m.id) ? 'is-found' : ''} aria-hidden>🐸</span>)}</div>
-    <p className="hunt-small">{run.clicks} Klicks · {run.misses} Fehlklicks · {run.hintsUsed} Hinweise{testMode ? ' · ohne Spielstand' : ''}</p>
-    {saveError && <p className="hunt-notice" role="alert">Noch nicht gespeichert. Verbindung prüfen. <button onClick={() => persist(snapshot())}>Erneut speichern</button></p>}
-    <GameDialog open={!running && !run.completed} label={hasStarted ? 'Pause' : 'Bereit zur Suche?'} onCancel={() => { if (hasStarted) resume() }}>
-      <span className="hunt-dialog-symbol" aria-hidden>🐸</span>
-      <p className="hunt-eyebrow">{testMode ? 'LEVEL TESTEN' : 'DEIN WALDABENTEUER'}</p>
-      <h2>{hasStarted ? 'Kleine Verschnaufpause' : 'Augen auf, Froggys raus!'}</h2>
-      <p>{hasStarted ? 'Die Zeit steht still. Deine Froggys warten auf dich.' : `Finde ${markers.length} Froggys direkt im Bild. Bei kleinen Details helfen Zoom und drei Hinweise.`}</p>
-      {imageError ? <p role="alert">Das Suchbild konnte nicht geladen werden. <button onClick={() => { setImageError(false); if (imageRef.current) imageRef.current.src = level.imageUrl }}>Erneut laden</button></p> : <button className="hunt-primary" onClick={resume} disabled={!imageReady}>{!imageReady ? 'Suchbild lädt …' : hasStarted ? 'Weitersuchen' : 'Suche starten'}</button>}
-      {testMode ? <button className="hunt-text-button" onClick={onExitTest}>Zum Editor</button> : <Link className="hunt-text-button" to="/">Zur Lobby</Link>}
-    </GameDialog>
-    <GameDialog open={run.completed} label="Alle Froggys gefunden">
-      <div className="hunt-victory-stars" aria-hidden>✦ ★ ✦</div>
-      <h2>Alle Froggys gefunden!</h2><p>Das war eine richtig gute Suche.</p>
-      <strong className="hunt-victory-time">{formatTime(run.durationMs)}</strong>
-      <div className="hunt-result-grid"><span><b>{run.clicks}</b>Klicks</span><span><b>{run.misses}</b>Fehlklicks</span><span><b>{run.hintsUsed}</b>Hinweise</span></div>
-      <p className="hunt-xp">{scoreRun(run)} XP beim ersten Abschluss · Bestzeiten bleiben erhalten</p>
-      {!testMode && <p role="status">{saveError ? 'Ergebnis noch nicht gespeichert.' : saving ? 'Ergebnis wird gespeichert …' : 'Dein Ergebnis ist gespeichert.'}</p>}
-      {saveError && <button className="hunt-primary" onClick={() => persist(current.current)}>Speichern wiederholen</button>}
-      <button className="hunt-primary" onClick={replay} disabled={saving || saveError}>Noch einmal spielen</button>
-      {testMode ? <button className="hunt-text-button" disabled={testSaving} onClick={onExitTest}>{testSaving ? 'Test wird bestätigt …' : 'Zum Editor'}</button> : <Link to="/history" className="hunt-text-button">Zu meiner Reise</Link>}
-    </GameDialog>
+    </div>
+
+    <div className="play-bottom">
+      <WoodRoundButton icon="hint" label={`Hinweis (${hintsLeft} übrig)`} onClick={useHint} disabled={!running || hintsLeft <= 0} badge={hintsLeft} />
+      <FrogPlank total={markers.length} found={foundCount} pulseIndex={pulseSlot} />
+      <AssetRoundButton src={ASSET.zoom} label={`Zoom ${zoom}× – tippen zum Wechseln`} onClick={cycleZoom} disabled={!running} badge={`${zoom}×`} active={zoom > 1} />
+    </div>
+    <p className="play-meta">{run.clicks} Klicks · {run.misses} Fehlklicks · {run.hintsUsed} Hinweise{testMode ? ' · ohne Spielstand' : ''}</p>
+
+    {flyers.map(f => <span key={f.key} className="frog-flyer" style={{ left: f.from.x, top: f.from.y, animation: 'none', transition: 'transform .6s cubic-bezier(.5,-0.4,.6,1)', transform: 'translate(0,0) scale(1.4)' }}
+      ref={el => { if (el) requestAnimationFrame(() => { el.style.transform = `translate(${f.to.x - f.from.x}px, ${f.to.y - f.from.y}px) scale(.8)` }) }} aria-hidden />)}
+
+    {saveError && <div className="play-save-error parchment" role="alert">Noch nicht gespeichert. <StoneButton size="sm" onClick={() => persist(snapshot())}>Erneut speichern</StoneButton></div>}
+
+    <GameModal open={!running && !run.completed} label={hasStarted ? 'Pause' : 'Bereit zur Suche?'} title={hasStarted ? 'PAUSE' : testMode ? 'LEVEL TESTEN' : levelNumber ? `LEVEL ${levelNumber}` : 'LOS GEHT’S'} onClose={hasStarted ? resume : undefined}>
+      <h2>{hasStarted ? 'Kleine Verschnaufpause' : level.title}</h2>
+      <p>{hasStarted ? 'Die Zeit steht still. Deine Froggys warten auf dich.' : `Finde alle ${markers.length} Froggys direkt im Bild. Zoom und ${MAX_HINTS} Hinweise helfen dir.`}</p>
+      <FrogPlank total={markers.length} found={foundCount} compact />
+      {imageError
+        ? <p role="alert">Das Suchbild konnte nicht geladen werden. <button className="text-link" onClick={() => { setImageError(false); if (imageRef.current) imageRef.current.src = level.imageUrl }}>Erneut laden</button></p>
+        : <div className="game-modal__actions">
+          <PlayAssetButton onClick={resume} disabled={!imageReady} label={hasStarted ? 'Weitersuchen' : 'Suche starten'} ribbon={!imageReady ? 'BILD LÄDT …' : hasStarted ? 'WEITERSUCHEN' : undefined} />
+          <div className="game-modal__row">
+            {testMode
+              ? <StoneButton tone="wood" size="sm" onClick={onExitTest}>Zum Editor</StoneButton>
+              : <><StoneButton tone="wood" size="sm" to="/history">Karte</StoneButton><StoneButton tone="wood" size="sm" to="/">Lobby</StoneButton></>}
+          </div>
+        </div>}
+    </GameModal>
+
+    {run.completed && <VictoryOverlay
+      title={level.title}
+      durationMs={run.durationMs}
+      clicks={run.clicks}
+      misses={run.misses}
+      hintsUsed={run.hintsUsed}
+      stars={starsForRun(run)}
+      xp={!testMode && !wasCompleted ? scoreRun(run) : null}
+      status={testMode ? (testSaving ? 'Test wird bestätigt …' : 'Test bestanden!') : saveError ? 'Ergebnis noch nicht gespeichert.' : saving ? 'Ergebnis wird gespeichert …' : 'Ergebnis gespeichert ✓'}
+      onContinue={testMode ? () => onExitTest?.() : () => nav(`/history?hop=${encodeURIComponent(level.id)}`)}
+      continueLabel={testMode ? 'ZUM EDITOR' : 'WEITER'}
+      onReplay={replay}
+      busy={saving || testSaving}
+      onRetrySave={saveError ? () => persist(current.current) : undefined}
+    />}
   </div>
 }

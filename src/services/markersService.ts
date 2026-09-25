@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { MOCK_DEMO_MARKERS, MOCK_DEMO_LEVEL } from '../data/mockLevel'
+import { MOCK_MARKERS } from '../data/mockLevel'
 import { getFirebaseDb, isFirebaseConfigured } from '../lib/firebase'
 import { LS_MARKERS, readJson, writeJson } from '../lib/mockStorage'
 import type { FrogMarker } from '../types/models'
@@ -7,7 +7,7 @@ import { checkDbError, supabase } from '../lib/supabase'
 import { validateMarkers } from '../lib/gameRules'
 
 function seedMockMarkers(): Record<string, FrogMarker[]> {
-  return { [MOCK_DEMO_LEVEL.id]: [...MOCK_DEMO_MARKERS] }
+  return Object.fromEntries(Object.entries(MOCK_MARKERS).map(([id, m]) => [id, [...m]]))
 }
 
 function getMockMarkersMap(): Record<string, FrogMarker[]> {

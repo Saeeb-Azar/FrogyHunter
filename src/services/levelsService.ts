@@ -10,13 +10,13 @@ import {
   query, where, or, and,
 } from 'firebase/firestore'
 import { checkDbError, supabase } from '../lib/supabase'
-import { MOCK_DEMO_LEVEL } from '../data/mockLevel'
+import { MOCK_LEVELS } from '../data/mockLevel'
 import { getFirebaseDb, isFirebaseConfigured } from '../lib/firebase'
 import { LS_LEVELS, readJson, writeJson } from '../lib/mockStorage'
 import type { Level, LevelStatus } from '../types/models'
 
 function seedMockLevels(): Record<string, Level> {
-  return { [MOCK_DEMO_LEVEL.id]: { ...MOCK_DEMO_LEVEL } }
+  return Object.fromEntries(MOCK_LEVELS.map(l => [l.id, { ...l }]))
 }
 
 function getMockLevelsMap(): Record<string, Level> {
@@ -160,7 +160,8 @@ export async function updateLevel(
   if (supabase) {
     const current = await getLevel(levelId)
     if (!current) throw new Error('Level nicht gefunden')
-    const { id: _id, ...data } = current
+    const data: Partial<Level> = { ...current }
+    delete data.id
     const { error } = await supabase.from('levels').update({ data: { ...data, ...patch, updatedAt: Date.now() } }).eq('id', levelId)
     checkDbError(error)
     return

@@ -1,16 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { AppLayout } from '../components/layout/AppLayout'
-import { FroggyHero } from '../components/lobby/FroggyHero'
-import { resolveCurrentLevel } from '../lib/currentLevel'
-import { publicUrl } from '../lib/publicUrl'
-import { formatTime } from '../lib/gameRules'
+import { GameStage } from '../components/game-ui/GameStage'
+import { Froggy3D, type Froggy3DHandle } from '../components/game-ui/Froggy3D'
+import { PlayAssetButton, StoneButton } from '../components/game-ui/PlayButtons'
+import { ProfilePanel } from '../components/game-ui/ProfilePanel'
+import { Stars } from '../components/game-ui/Stars'
+import { WoodRoundButton } from '../components/game-ui/WoodButton'
 import { NewLevelCountdown } from '../components/lobby/NewLevelCountdown'
+import { ASSET } from '../lib/gameAssets'
+import { resolveCurrentLevel } from '../lib/currentLevel'
+import { formatTime, starsForRun } from '../lib/gameRules'
+import { playSound } from '../audio/soundManager'
 import { isUserAdmin } from '../services/adminService'
 import { getProgress, listCompletedForUser } from '../services/progressService'
 import { useSettingsStore } from '../stores/settingsStore'
 import type { Level, UserProgress } from '../types/models'
+
+const GREETINGS = ['Quak! 💚', 'Such mit mir!', 'Hihi, kitzelig!', 'Mittwoch = Froschtag!', 'Findest du alle?']
 
 export function LobbyPage() {
   const { user, demoMode } = useAuth()
@@ -20,8 +27,13 @@ export function LobbyPage() {
   const [admin, setAdmin] = useState(false)
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [greet, setGreet] = useState(0)
+  const frog = useRef<Froggy3DHandle>(null)
   const music = useSettingsStore(s => s.musicEnabled)
-  const toggleMusic = useSettingsStore(s => s.setMusic)
+  const sfx = useSettingsStore(s => s.sfxEnabled)
+  const setMusic = useSettingsStore(s => s.setMusic)
+  const setSfx = useSettingsStore(s => s.setSfx)
+
   useEffect(() => {
     if (!user) return
     let active = true
@@ -29,7 +41,7 @@ export function LobbyPage() {
       try {
         const [r, adm, completed] = await Promise.all([resolveCurrentLevel(user.uid), isUserAdmin(user.uid), listCompletedForUser(user.uid)])
         const p = r.level ? await getProgress(user.uid, r.level.id) : null
-        if (active) { setLevel(r.level); setProgress(p); setAdmin(adm); setXp(completed.reduce((n, p) => n + (p.xp ?? 100), 0)); setError(false) }
+        if (active) { setLevel(r.level); setProgress(p); setAdmin(adm); setXp(completed.reduce((n, c) => n + (c.xp ?? 100), 0)); setError(false) }
       } catch { if (active) setError(true) }
       finally { if (active) setLoading(false) }
     }
@@ -37,29 +49,59 @@ export function LobbyPage() {
     const timer = setInterval(() => { if (!document.hidden) void load() }, 30000)
     return () => { active = false; clearInterval(timer) }
   }, [user])
-  return <AppLayout mainClass="hunt-lobby" shellClass="hunt-world" hideAmbient>
-    <header className="hunt-profile-row">
-      <Link to="/settings" className="hunt-profile"><span className="hunt-avatar" aria-hidden>🐸</span><span><strong>{user?.displayName ?? 'Froschfreund'}</strong><small>Level {1 + Math.floor(xp / 250)} · {xp} XP</small><progress value={xp % 250} max={250} aria-label="Fortschritt zum nächsten Profil Level" /></span></Link>
-      <button className="hunt-icon-button" onClick={() => toggleMusic(!music)} aria-pressed={music} aria-label="Musik umschalten">{music ? '♫' : '♪'}</button>
-    </header>
-    <div className="hunt-brand"><span>FroggySmill</span><h1>HUNT</h1><p>Ein Wald voller kleiner Geheimnisse.</p></div>
-    <FroggyHero />
-    <div className="hunt-lobby-bottom">
-      {loading ? <div className="hunt-notice">Dein Abenteuer lädt …</div> : error ? <div className="hunt-notice" role="alert">Die Level konnten nicht geladen werden. <button onClick={() => location.reload()}>Erneut versuchen</button></div> : level ? <>
-        <section className="hunt-week-card" aria-label="Aktuelles Wochenlevel">
-          <img src={level.imageUrl} alt="" />
-          <div><span className="hunt-eyebrow">AKTUELLES ABENTEUER</span><h2>{level.title}</h2><p>{level.frogCount} versteckte Froggys{progress?.completed ? ` · Bestzeit ${formatTime(progress.bestDurationMs ?? progress.durationMs ?? 0)}` : ''}</p></div>
-          {progress?.completed && <span className="hunt-completed-check" aria-label="Abgeschlossen">✓</span>}
-        </section>
-        <Link to="/play" className="hunt-primary hunt-play-cta">{progress?.activeAttempt ? 'WEITERSUCHEN' : progress?.completed ? 'NOCH MAL SPIELEN' : 'SPIELEN'} <span aria-hidden>▶</span></Link>
-      </> : <p className="hunt-notice">Dein erstes Wochenabenteuer erscheint bald.</p>}
-      <div className="hunt-countdown"><span>NEUES LEVEL JEDEN MITTWOCH · 18 UHR</span><NewLevelCountdown /></div>
-      <nav className="hunt-menu" aria-label="Hauptmenü">
-        {[['history', 'historie', 'Meine Reise'], ['settings', 'einstellungen', 'Einstellungen'], ['info', 'infos', 'Infos']].map(([route, asset, label]) => <Link key={route} to={`/${route}`}><img src={publicUrl(`assets/ui/btn_${asset}.png`)} alt="" /><span>{label}</span></Link>)}
-      </nav>
-      <p className="hunt-community">Willkommen in der Froggy Community <span aria-hidden>♥</span></p>
-      {demoMode && <p className="hunt-demo-label">Demo · Fortschritt nur auf diesem Gerät</p>}
-      {admin && <Link to="/admin" className="hunt-admin-link">Level Studio öffnen</Link>}
-    </div>
-  </AppLayout>
+
+  const poke = () => { frog.current?.celebrate(); playSound('found'); setGreet(g => g + 1) }
+  const ribbon = progress?.activeAttempt ? 'WEITERSUCHEN' : progress?.completed ? 'NOCHMAL SPIELEN' : undefined
+  const stars = progress?.completed ? starsForRun(progress) : 0
+
+  return (
+    <GameStage scene="lobby">
+      <div className="lobby">
+        <div className="lobby-top">
+          <ProfilePanel name={user?.displayName ?? 'Froschfreund'} xp={xp} photoURL={user?.photoURL} />
+          <div className="lobby-audio">
+            <WoodRoundButton icon="music" label={music ? 'Musik aus' : 'Musik an'} off={!music} pressed={music} onClick={() => setMusic(!music)} size="sm" />
+            <WoodRoundButton icon="sound" label={sfx ? 'Soundeffekte aus' : 'Soundeffekte an'} off={!sfx} pressed={sfx} onClick={() => setSfx(!sfx)} size="sm" />
+          </div>
+        </div>
+
+        <div className="lobby-logo">
+          <span className="game-title">FROGGY <span className="game-title game-title--green">HUNT</span></span>
+          <span className="lobby-logo__tag">FINDE SIE ALLE!</span>
+        </div>
+
+        {loading ? <div className="lobby-notice wood-panel"><div className="loading-frog"><i aria-hidden>🐸</i>Dein Abenteuer lädt …</div></div>
+          : error ? <div className="lobby-notice wood-panel" role="alert"><p>Die Level konnten nicht geladen werden.</p><StoneButton size="sm" onClick={() => location.reload()}>Erneut versuchen</StoneButton></div>
+          : level ? <>
+            <Link to="/play" className="lvl-card" aria-label={`Aktuelles Level: ${level.title}, ${level.frogCount} versteckte Froggys`}>
+              <span className="lvl-card__window"><img src={level.imageUrl} alt="" /></span>
+              <img className="lvl-card__frame" src={ASSET.lvlShow} alt="" draggable={false} />
+              <span className="lvl-card__title">{level.title}</span>
+              <span className="lvl-card__plank lvl-card__plank--1">
+                {progress?.completed
+                  ? <><Stars count={stars} className="lvl-card__stars" /> Bestzeit {formatTime(progress.bestDurationMs ?? progress.durationMs ?? 0)}</>
+                  : <>🐸 {level.frogCount} versteckte Froggys</>}
+              </span>
+              <span className="lvl-card__plank lvl-card__plank--2">Neues Level in&nbsp;<NewLevelCountdown /></span>
+              {progress?.completed && <span className="lvl-card__badge">GE-<br />SCHAFFT</span>}
+            </Link>
+            <div className="lobby-play"><PlayAssetButton to="/play" ribbon={ribbon} label={ribbon ?? 'Spielen'} /></div>
+          </> : <div className="lobby-notice wood-panel"><p>Dein erstes Wochenabenteuer erscheint bald.</p><p>Neues Level in <NewLevelCountdown /></p></div>}
+
+        <nav className="lobby-menu" aria-label="Hauptmenü">
+          <Link to="/history" className="menu-btn" aria-label="Historie – Level-Karte"><img src={ASSET.btnHistorie} alt="" draggable={false} /></Link>
+          <Link to="/settings" className="menu-btn" aria-label="Einstellungen"><img src={ASSET.btnEinstellungen} alt="" draggable={false} /></Link>
+          <Link to="/info" className="menu-btn" aria-label="Infos"><img src={ASSET.btnInfos} alt="" draggable={false} /></Link>
+        </nav>
+
+        <div className="lobby-frog">
+          <Froggy3D ref={frog} variant="hero" fallback={<span className="froggy-fallback" aria-hidden>🐸</span>} />
+          <button type="button" className="lobby-frog__tap" onClick={poke} aria-label="Froggy anstupsen" />
+          <span key={greet} className="lobby-frog__bubble" aria-hidden>{GREETINGS[greet % GREETINGS.length]}</span>
+        </div>
+        {admin && <div className="lobby-admin"><StoneButton to="/admin" tone="gold" size="sm">Level Studio</StoneButton></div>}
+        {demoMode && <p className="lobby-demo">Demo · Fortschritt nur auf diesem Gerät</p>}
+      </div>
+    </GameStage>
+  )
 }

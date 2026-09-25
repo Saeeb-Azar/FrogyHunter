@@ -47,10 +47,11 @@ export function AdminLevelPreviewPage() {
         </Link>
       </div>
       <h2 className="h2">Test: {level.title}</h2>
-      <p className="muted" style={{ marginBottom: '1rem' }}>
+      <p className="studio-help" style={{ marginBottom: '1rem' }}>
         Identische Spieleransicht. Es werden keine Spielergebnisse oder XP vergeben. Finde alle Froggys, um die Freigabe zu aktivieren.
       </p>
       {message && <p className="studio-status" role="status">{message}</p>}
+      <div className="preview-play">
       <PlayView
         level={level}
         markers={markers}
@@ -69,6 +70,7 @@ export function AdminLevelPreviewPage() {
           if (id) nav(`/admin/levels/${id}`)
         }}
       />
+      </div>
     </div>
   )
 }

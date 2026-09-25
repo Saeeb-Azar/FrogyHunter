@@ -28,3 +28,14 @@ export function mergeRun(previous: UserProgress | null, uid: string, levelId: st
     xp: base.xp ?? (base.completed ? 100 : scoreRun(run)), attempts: (base.attempts ?? (base.completed ? 1 : 0)) + 1,
     lastAttemptId: run.id, activeAttempt: null }
 }
+/** 1–3 Sterne: ohne Hinweise und mit wenigen Fehlklicks gibt es alle drei. */
+export function starsForRun(run: { misses: number; hintsUsed?: number | null }) {
+  const hints = run.hintsUsed ?? 0
+  if (hints === 0 && run.misses <= 3) return 3
+  if (hints <= 1 && run.misses <= 8) return 2
+  return 1
+}
+/** Profil-Level aus XP (250 XP pro Stufe). */
+export function profileLevel(xp: number) {
+  return { level: 1 + Math.floor(xp / 250), into: xp % 250, per: 250 }
+}

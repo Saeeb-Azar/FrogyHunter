@@ -1,157 +1,97 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { AppLayout } from '../components/layout/AppLayout'
-import { UserBar } from '../components/layout/UserBar'
-import { PageTransition } from '../components/ui/PageTransition'
-import { setMockAdminFlag } from '../services/adminService'
+import { GameStage } from '../components/game-ui/GameStage'
+import { StoneButton } from '../components/game-ui/PlayButtons'
+import { ScreenHeader } from '../components/game-ui/ScreenHeader'
+import { WoodIcon } from '../components/game-ui/WoodButton'
+import { isUserAdmin, setMockAdminFlag } from '../services/adminService'
 import { loadUserSettingsRemote, saveUserSettingsRemote, saveDisplayName } from '../services/usersService'
 import { useSettingsStore } from '../stores/settingsStore'
 
-export function SettingsPage() {
-  const { user, demoMode } = useAuth()
-  const [name, setName] = useState(user?.displayName ?? '')
-  const [message, setMessage] = useState('')
-  const musicEnabled = useSettingsStore((s) => s.musicEnabled)
-  const sfxEnabled = useSettingsStore((s) => s.sfxEnabled)
-  const volume = useSettingsStore((s) => s.volume)
-  const reduceMotion = useSettingsStore((s) => s.reduceMotion)
-  const theme = useSettingsStore((s) => s.theme)
-  const setMusic = useSettingsStore((s) => s.setMusic)
-  const setSfx = useSettingsStore((s) => s.setSfx)
-  const setVolume = useSettingsStore((s) => s.setVolume)
-  const setReduceMotion = useSettingsStore((s) => s.setReduceMotion)
-  const setTheme = useSettingsStore((s) => s.setTheme)
-  const hydrateFromRemote = useSettingsStore((s) => s.hydrateFromRemote)
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme
-  }, [theme])
-
-  useEffect(() => {
-    if (!user || demoMode) return
-    void (async () => {
-      try {
-        const remote = await loadUserSettingsRemote(user.uid)
-        if (remote) hydrateFromRemote(remote)
-      } catch { setMessage('Einstellungen konnten nicht vom Konto geladen werden.') }
-    })()
-  }, [user, demoMode, hydrateFromRemote])
-
-  const persistRemote = () => {
-    if (!user || demoMode) return
-    const state = useSettingsStore.getState()
-    void saveUserSettingsRemote(user.uid, { musicEnabled: state.musicEnabled, sfxEnabled: state.sfxEnabled, volume: state.volume, reduceMotion: state.reduceMotion, theme: state.theme })
-      .then(() => setMessage('Einstellungen gespeichert.')).catch(() => setMessage('Auf diesem Gerät gespeichert. Die Synchronisierung ist fehlgeschlagen.'))
-  }
-
+function WoodSwitch({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <AppLayout showBack backTo="/">
-      <UserBar />
-      <PageTransition>
-        <h2 className="h2">Einstellungen</h2>
-        <p className="muted" style={{ marginBottom: '1.5rem' }}>
-          Stelle Musik, Soundeffekte und Bewegung so ein, wie es dir gefällt.
-        </p>
-
-        <div className="card card--pad" style={{ maxWidth: 520 }}>
-          <div className="field"><label htmlFor="display-name">Dein Anzeigename</label><input id="display-name" className="input" value={name} maxLength={30} onChange={e => setName(e.target.value)} /><button className="btn btn--ghost" onClick={() => { if (user) void saveDisplayName(user.uid, name).then(() => location.reload()).catch(() => setMessage('Der Name konnte nicht gespeichert werden.')) }}>Namen speichern</button></div>
-          {message && <p role="status">{message}</p>}
-          <ToggleRow
-            label="Musik"
-            checked={musicEnabled}
-            onChange={(v) => {
-              setMusic(v)
-              persistRemote()
-            }}
-          />
-          <ToggleRow
-            label="Soundeffekte"
-            checked={sfxEnabled}
-            onChange={(v) => {
-              setSfx(v)
-              persistRemote()
-            }}
-          />
-          <div className="field" style={{ marginTop: '1rem' }}>
-            <label htmlFor="vol">Lautstärke</label>
-            <input
-              id="vol"
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={volume}
-              className="range"
-              onChange={(e) => {
-                setVolume(Number(e.target.value))
-                persistRemote()
-              }}
-            />
-          </div>
-          <ToggleRow
-            label="Animationen reduzieren"
-            checked={reduceMotion}
-            onChange={(v) => {
-              setReduceMotion(v)
-              persistRemote()
-            }}
-          />
-          <div className="field">
-            <label htmlFor="theme">Theme</label>
-            <select
-              id="theme"
-              className="select"
-              value={theme}
-              onChange={(e) => {
-                setTheme(e.target.value as 'dark' | 'light')
-                persistRemote()
-              }}
-            >
-              <option value="dark">Dunkel (Standard)</option>
-              <option value="light">Hell (Beta)</option>
-            </select>
-          </div>
-
-          {demoMode && (
-            <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
-              <p className="muted" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-                Demo: Admin-Bereich freischalten (nur lokal)
-              </p>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  defaultChecked={localStorage.getItem('froggy_mock_is_admin') === '1'}
-                  onChange={(e) => setMockAdminFlag(e.target.checked)}
-                />
-                <span>Lokaler Admin-Modus</span>
-              </label>
-              <Link to="/admin" style={{ display: 'inline-block', marginTop: '0.75rem' }}>
-                Zum Admin →
-              </Link>
-            </div>
-          )}
-        </div>
-      </PageTransition>
-    </AppLayout>
+    <span className="wood-switch">
+      <input type="checkbox" role="switch" aria-label={label} checked={checked} onChange={e => onChange(e.target.checked)} />
+      <span className="wood-switch__track" aria-hidden />
+      <span className="wood-switch__knob" aria-hidden />
+    </span>
   )
 }
 
-function ToggleRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Row({ icon, label, sub, checked, onChange }: { icon: Parameters<typeof WoodIcon>[0]['icon']; label: string; sub?: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '1rem',
-        padding: '0.65rem 0',
-        borderBottom: '1px solid var(--border-subtle)',
-        cursor: 'pointer',
-      }}
-    >
-      <span style={{ fontWeight: 600 }}>{label}</span>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-    </label>
+    <div className="setting-row">
+      <span className="setting-row__label"><span className="setting-icon"><WoodIcon icon={icon} /></span><span>{label}{sub && <small>{sub}</small>}</span></span>
+      <WoodSwitch label={label} checked={checked} onChange={onChange} />
+    </div>
+  )
+}
+
+export function SettingsPage() {
+  const { user, demoMode, signOut } = useAuth()
+  const [name, setName] = useState(user?.displayName ?? '')
+  const [message, setMessage] = useState('')
+  const [admin, setAdmin] = useState(false)
+  const [mockAdmin, setMockAdmin] = useState(() => localStorage.getItem('froggy_mock_is_admin') === '1')
+  const s = useSettingsStore()
+
+  useEffect(() => {
+    if (!user) return
+    void isUserAdmin(user.uid).then(setAdmin).catch(() => setAdmin(false))
+    if (demoMode) return
+    void loadUserSettingsRemote(user.uid).then(remote => { if (remote) s.hydrateFromRemote(remote) }).catch(() => setMessage('Einstellungen konnten nicht vom Konto geladen werden.'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, demoMode])
+
+  const persistRemote = () => {
+    if (!user || demoMode) return
+    const st = useSettingsStore.getState()
+    void saveUserSettingsRemote(user.uid, { musicEnabled: st.musicEnabled, sfxEnabled: st.sfxEnabled, volume: st.volume, reduceMotion: st.reduceMotion, theme: st.theme })
+      .then(() => setMessage('Einstellungen gespeichert ✓')).catch(() => setMessage('Auf diesem Gerät gespeichert. Die Synchronisierung ist fehlgeschlagen.'))
+  }
+  const change = (fn: () => void) => { fn(); persistRemote() }
+
+  return (
+    <GameStage scene="forest">
+      <div className="sub-screen">
+        <ScreenHeader title="EINSTELLUNGEN" />
+
+        <section className="wood-panel" aria-label="Ton und Bewegung">
+          <div className="wood-panel__inner">
+            <h2 className="panel-heading">Ton & Spielgefühl</h2>
+            <Row icon="music" label="Musik" sub="Fröhliche Waldmelodie" checked={s.musicEnabled} onChange={v => change(() => s.setMusic(v))} />
+            <Row icon="sound" label="Soundeffekte" sub="Quaken, Treffer, Jubel" checked={s.sfxEnabled} onChange={v => change(() => s.setSfx(v))} />
+            <div className="volume-block">
+              <label className="setting-row__label" htmlFor="vol"><span>Lautstärke</span><span className="wood-text" style={{ fontSize: 16 }}>{Math.round(s.volume * 100)} %</span></label>
+              <input id="vol" type="range" min={0} max={1} step={0.05} value={s.volume} className="wood-range" style={{ '--v': `${s.volume * 100}%` } as React.CSSProperties}
+                onChange={e => change(() => s.setVolume(Number(e.target.value)))} />
+            </div>
+            <Row icon="replay" label="Animationen reduzieren" sub="Weniger Bewegung & Effekte" checked={s.reduceMotion} onChange={v => change(() => s.setReduceMotion(v))} />
+            {message && <p className="panel-status" role="status">{message}</p>}
+          </div>
+        </section>
+
+        <section className="wood-panel" aria-label="Profil">
+          <div className="wood-panel__inner">
+            <h2 className="panel-heading">Dein Profil</h2>
+            <label className="setting-row__label" htmlFor="display-name" style={{ fontSize: 15 }}>Anzeigename</label>
+            <div className="name-row">
+              <input id="display-name" className="wood-input" value={name} maxLength={30} onChange={e => setName(e.target.value)} />
+              <StoneButton size="sm" disabled={!name.trim() || name === user?.displayName}
+                onClick={() => { if (user) void saveDisplayName(user.uid, name.trim()).then(() => location.reload()).catch(() => setMessage('Der Name konnte nicht gespeichert werden.')) }}>Speichern</StoneButton>
+            </div>
+            <p className="panel-note">{demoMode ? 'Demo · Dein Fortschritt bleibt nur auf diesem Gerät.' : user?.email ?? ''}</p>
+            <div className="game-modal__row" style={{ marginTop: 12 }}>
+              {admin && <StoneButton tone="gold" size="sm" to="/admin">Level Studio</StoneButton>}
+              <StoneButton tone="wood" size="sm" onClick={() => void signOut()}>Abmelden</StoneButton>
+            </div>
+            {demoMode && <div className="setting-row" style={{ marginTop: 10 }}>
+              <span className="setting-row__label" style={{ fontSize: 15 }}><span>Lokaler Admin-Modus<small>Nur Demo: Level Studio freischalten</small></span></span>
+              <WoodSwitch label="Lokaler Admin-Modus" checked={mockAdmin} onChange={v => { setMockAdminFlag(v); setMockAdmin(v); setAdmin(v) }} />
+            </div>}
+          </div>
+        </section>
+      </div>
+    </GameStage>
   )
 }

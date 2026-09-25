@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createRun, mergeRun, scoreRun, validateMarkers, formatTime } from '../src/lib/gameRules.ts'
+import { createRun, mergeRun, scoreRun, validateMarkers, formatTime, starsForRun, profileLevel } from '../src/lib/gameRules.ts'
 import { findMarkerAtClick } from '../src/lib/hitTest.ts'
 import { parseBerlinInput, berlinInput } from '../src/lib/levelValidation.ts'
 
@@ -41,4 +41,17 @@ test('Berlin publication time round-trips in summer and winter', () => {
   for(const input of ['2026-09-09T18:00','2026-12-09T18:00']) assert.equal(berlinInput(parseBerlinInput(input)),input)
   assert.throws(()=>parseBerlinInput('nonsense'))
   assert.equal(formatTime(83000),'01:23')
+})
+
+test('stars reward clean runs and never drop below one', () => {
+  assert.equal(starsForRun({ misses: 0, hintsUsed: 0 }), 3)
+  assert.equal(starsForRun({ misses: 3, hintsUsed: 0 }), 3)
+  assert.equal(starsForRun({ misses: 4, hintsUsed: 0 }), 2)
+  assert.equal(starsForRun({ misses: 8, hintsUsed: 1 }), 2)
+  assert.equal(starsForRun({ misses: 2, hintsUsed: 2 }), 1)
+  assert.equal(starsForRun({ misses: 40, hintsUsed: null }), 1)
+})
+test('profile level advances every 250 XP', () => {
+  assert.deepEqual(profileLevel(0), { level: 1, into: 0, per: 250 })
+  assert.deepEqual(profileLevel(520), { level: 3, into: 20, per: 250 })
 })

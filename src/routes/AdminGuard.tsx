@@ -1,52 +1,27 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { AmbientBackground } from '../components/layout/AmbientBackground'
+import { GameStage } from '../components/game-ui/GameStage'
 import { isUserAdmin } from '../services/adminService'
 
 export function AdminGuard() {
   const { user, loading } = useAuth()
-  const [allowed, setAllowed] = useState(false)
-  const [checking, setChecking] = useState(true)
+  /** Ergebnis gilt nur für die geprüfte uid – verhindert eine vorschnelle Umleitung, solange die Prüfung läuft. */
+  const [result, setResult] = useState<{ uid: string; ok: boolean } | null>(null)
 
   useEffect(() => {
-    if (!user) {
-      setChecking(false)
-      setAllowed(false)
-      return
-    }
-    setChecking(true)
-    void (async () => {
-      try {
-        const ok = await isUserAdmin(user.uid)
-        setAllowed(ok)
-      } catch (e) {
-        console.error('isUserAdmin', e)
-        setAllowed(false)
-      } finally {
-        setChecking(false)
-      }
-    })()
+    if (!user) return
+    let active = true
+    isUserAdmin(user.uid)
+      .then(ok => { if (active) setResult({ uid: user.uid, ok }) })
+      .catch(e => { console.error('isUserAdmin', e); if (active) setResult({ uid: user.uid, ok: false }) })
+    return () => { active = false }
   }, [user])
 
-  if (loading || checking) {
-    return (
-      <div className="app-shell">
-        <AmbientBackground />
-        <div className="app-main">
-          <div className="spinner" />
-        </div>
-      </div>
-    )
+  if (!loading && !user) return <Navigate to="/login" replace />
+  if (loading || !user || result?.uid !== user.uid) {
+    return <GameStage scene="forest"><div className="loading-frog"><i aria-hidden>🐸</i>Level Studio lädt …</div></GameStage>
   }
-
-  if (!user) {
-    return <Navigate to="/login" replace />
-  }
-
-  if (!allowed) {
-    return <Navigate to="/" replace />
-  }
-
+  if (!result.ok) return <Navigate to="/" replace />
   return <Outlet />
 }

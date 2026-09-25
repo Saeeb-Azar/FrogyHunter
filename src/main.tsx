@@ -4,9 +4,12 @@ import { createRoot } from 'react-dom/client'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import './styles/global.css'
 import './styles/hunt.css'
+import './styles/game.css'
 import { publicUrl } from './lib/publicUrl'
+import { registerAssetCssVars } from './lib/gameAssets'
 import App from './App'
 
+registerAssetCssVars()
 const rootEl = document.getElementById('root')
 document.documentElement.style.setProperty('--hunt-world-image', `url("${publicUrl('assets/game-scene-bg.png')}")`)
 if (!rootEl) {

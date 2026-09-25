@@ -2,6 +2,16 @@
 
 ## Implemented
 
+### Game UI (einheitlicher Look)
+
+- Eine gemeinsame Spielbühne (`GameStage`) für alle Screens: gleicher Waldhintergrund, Lichtstrahlen, Blüten, Glühwürmchen.
+- Durchgehend die Original-Assets: grüner SPIELEN-Button, Stein-Buttons Historie/Einstellungen/Infos, „Aktuelles Level“-Holztafel, Profil-Panel, Zeit-Brett, Pause/Zoom/Vollbild, Froggy-Leiste mit Silhouetten, Holzkacheln, „Neues Level“-Schild, star_box als Dialog-Panel.
+- 3D-Froggy (Three.js, prozedural): Lobby (quakt, blinzelt, fängt Fliegen, Sprung beim Antippen), Karte (Spielfigur), Sieg (Jubel).
+- Level-Karte als Levelauswahl: nach einem Abschluss hüpft der Froggy über Trittsteine zum nächsten Level; Sterne (1–3) je Level.
+- Sieg-Screen mit Sternen, Zeit, XP, Konfetti; gefundene Froggys fliegen in die Froggy-Leiste.
+- Demo enthält zwei Level (Waldteich, Baumhaus-Lichtung), damit der Karten-Sprung testbar ist.
+
+
 - Mobile lobby with an actual animated Three.js frog and pond, lazy-loaded with static fallback.
 - Original generated 1086 × 1448 demo search image containing five visually verified frogs.
 - Actual image hit testing shared with admin preview, zoom, bounded hints, pause and automatic background pause.

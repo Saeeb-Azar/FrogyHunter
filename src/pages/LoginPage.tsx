@@ -1,82 +1,35 @@
-import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { AppLayout } from '../components/layout/AppLayout'
-import { PageTransition } from '../components/ui/PageTransition'
+import { Froggy3D } from '../components/game-ui/Froggy3D'
+import { GameStage } from '../components/game-ui/GameStage'
+import { StoneButton } from '../components/game-ui/PlayButtons'
 
 export function LoginPage() {
   const { user, loading, demoMode, signInWithGoogle, signInDemo } = useAuth()
   const [err, setErr] = useState<string | null>(null)
-
-  if (loading) {
-    return (
-      <AppLayout>
-        <div className="spinner" />
-      </AppLayout>
-    )
-  }
-
-  if (user) {
-    return <Navigate to="/" replace />
-  }
-
+  if (loading) return <GameStage scene="lobby"><div className="loading-frog"><i aria-hidden>🐸</i>Einen Moment …</div></GameStage>
+  if (user) return <Navigate to="/" replace />
   return (
-    <AppLayout>
-      <PageTransition>
-        <motion.div
-          className="card card--pad login-card"
-          initial={{ opacity: 1, y: 0 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <div className="login-card__mark" aria-hidden>
-            🐸
+    <GameStage scene="lobby">
+      <div className="login">
+        <div className="lobby-logo">
+          <span className="game-title" style={{ fontSize: 'min(13vw, 60px)' }}>FROGGY <span className="game-title game-title--green">HUNT</span></span>
+          <span className="lobby-logo__tag">FINDE SIE ALLE!</span>
+        </div>
+        <div className="login-frog"><Froggy3D variant="hero" fallback={<span className="froggy-fallback" aria-hidden>🐸</span>} /></div>
+        <div className="wood-panel">
+          <div className="wood-panel__inner">
+            {demoMode && <span className="demo-pill">DEMO-MODUS</span>}
+            <p>{demoMode ? 'Finde die versteckten Froggys! Die Demo speichert deine Reise auf diesem Gerät.' : 'Einmal anmelden – deine Reise, Sterne und Bestzeiten bleiben bei dir.'}</p>
+            {err && <p role="alert" style={{ color: '#ffb4a0' }}>{err}</p>}
+            {demoMode
+              ? <StoneButton size="lg" onClick={signInDemo}>Demo starten</StoneButton>
+              : <StoneButton size="lg" onClick={() => { setErr(null); void signInWithGoogle().catch(() => setErr('Google-Anmeldung fehlgeschlagen.')) }}>Mit Google anmelden</StoneButton>}
+            <small>Kein Zugriff auf dein Gmail-Postfach – nur sicherer Sign-In über Google.</small>
           </div>
-          <h1 className="h1">
-            FroggySmill <span>Hunt</span>
-          </h1>
-          <p className="muted" style={{ marginBottom: '1.5rem' }}>
-            {demoMode ? 'Finde fünf Froggys im Waldteich. Die Demo speichert deine Reise auf diesem Gerät.' : 'Einmal anmelden – deine Reise und deine Bestzeiten bleiben bei dir.'}
-          </p>
-          {demoMode && (
-            <p className="badge badge--warn" style={{ display: 'inline-block', marginBottom: '1rem' }}>
-              Demo-Modus aktiv
-            </p>
-          )}
-          {err && (
-            <p className="muted" style={{ color: 'var(--danger)', fontSize: '0.9rem', marginBottom: '1rem' }} role="alert">
-              {err}
-            </p>
-          )}
-          {!demoMode && (
-            <button
-              type="button"
-              className="btn btn--primary btn--lg btn--block"
-              style={{ marginBottom: '0.65rem' }}
-              onClick={() => {
-                setErr(null)
-                void signInWithGoogle().catch(() => setErr('Google-Anmeldung fehlgeschlagen.'))
-              }}
-            >
-              Mit Google anmelden
-            </button>
-          )}
-          {demoMode && (
-            <button type="button" className="btn btn--primary btn--lg btn--block" style={{ marginBottom: '0.65rem' }} onClick={signInDemo}>
-              Demo starten
-            </button>
-          )}
-          <p className="muted" style={{ fontSize: '0.78rem', marginTop: '1.1rem', lineHeight: 1.5 }}>
-            Kein Zugriff auf dein Gmail-Postfach – nur sicherer Sign-In über Google.
-          </p>
-          {!demoMode && (
-            <p className="muted" style={{ marginTop: '1rem', fontSize: '0.82rem' }}>
-              Ohne Anmeldung ist die Lobby nicht erreichbar.
-            </p>
-          )}
-        </motion.div>
-      </PageTransition>
-    </AppLayout>
+        </div>
+      </div>
+    </GameStage>
   )
 }

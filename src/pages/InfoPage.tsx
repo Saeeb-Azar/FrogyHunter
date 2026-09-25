@@ -1,53 +1,55 @@
-import { AppLayout } from '../components/layout/AppLayout'
-import { UserBar } from '../components/layout/UserBar'
-import { PageTransition } from '../components/ui/PageTransition'
+import { GameStage } from '../components/game-ui/GameStage'
+import { StoneButton } from '../components/game-ui/PlayButtons'
+import { ScreenHeader } from '../components/game-ui/ScreenHeader'
+import { Stars } from '../components/game-ui/Stars'
+import { NewLevelCountdown } from '../components/lobby/NewLevelCountdown'
+
+const STEPS: [string, string][] = [
+  ['Level wählen', 'Starte das aktuelle Wochenlevel in der Lobby oder wähle ein älteres Level auf der Karte.'],
+  ['Froggys finden', 'Tippe direkt auf einen versteckten Froggy. Richtig getroffen, hüpft er in deine Froggy-Leiste.'],
+  ['Lupe & Hinweise', 'Mit der Lupe zoomst du hinein. Drei Glühbirnen-Hinweise zeigen grob, wo du suchen kannst.'],
+  ['Weiterhüpfen', 'Alle gefunden? Dein Froggy springt auf der Karte zum nächsten Level.'],
+]
 
 export function InfoPage() {
   return (
-    <AppLayout showBack backTo="/">
-      <UserBar />
-      <PageTransition>
-        <h2 className="h2">Über FroggySmill Hunt</h2>
-        <div className="card card--pad" style={{ maxWidth: 640 }}>
-          <section style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 0.5rem', color: 'var(--accent)' }}>Spielidee</h3>
-            <p className="muted" style={{ margin: 0 }}>
-              In jedem Level wartet ein großes Bild voller Details. Irgendwo haben sich kleine Froggys versteckt. Tippe auf die
-              richtige Stelle – triffst du, erscheint ein leuchtender Ring und dein Fortschritt oben aktualisiert sich.
-            </p>
-          </section>
-          <section style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 0.5rem', color: 'var(--accent)' }}>So funktioniert&apos;s</h3>
-            <ul className="muted" style={{ margin: 0, paddingLeft: '1.2rem' }}>
-              <li>Starte über „Spielen“ das aktuelle Level.</li>
-              <li>Jeder Treffer zählt nur einmal – Doppelklicks auf dieselbe Stelle geben keine Extra-Punkte.</li>
-              <li>Am Ende siehst du Zeit, Klicks und Fehltreffer.</li>
-              <li>Drei Hinweise zeigen dir grob, wo du suchen kannst.</li>
-              <li>Pause hält die Uhr an und verdeckt das Bild. Beim App Wechsel pausiert das Spiel automatisch.</li>
-              <li>Für den ersten Abschluss gibt es XP. Wiederholungen verbessern deine Bestzeit, ohne zusätzliche XP.</li>
-            </ul>
-          </section>
-          <section style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 0.5rem', color: 'var(--accent)' }}>Jeden Mittwoch</h3>
-            <p className="muted" style={{ margin: 0 }}>
-              <strong style={{ color: 'var(--text-primary)' }}>Mittwoch ist Frosch-Tag:</strong> Wir veröffentlichen neue Level und
-              kniffligere Hiding-Spots. Schau regelmäßig rein – die Lobby zeigt, ob ein frisches Level bereitsteht.
-            </p>
-          </section>
-          <section>
-            <h3 style={{ margin: '0 0 0.5rem', color: 'var(--accent)' }}>Dein Fortschritt</h3>
-            <p className="muted" style={{ margin: 0 }}>
-              Mit einem Google Konto bleibt deine Reise gespeichert. In der Demo bleiben Spielstände ausschließlich auf diesem Gerät. Alte Wochenlevel findest du auf deiner Karte.
-            </p>
-          </section>
-          <div className="studio-toolbar">
-            {import.meta.env.VITE_SUPPORT_EMAIL && <a href={`mailto:${import.meta.env.VITE_SUPPORT_EMAIL}`}>Kontakt</a>}
-            {import.meta.env.VITE_INSTAGRAM_URL && <a href={import.meta.env.VITE_INSTAGRAM_URL} target="_blank" rel="noreferrer">Instagram</a>}
-            {import.meta.env.VITE_IMPRINT_URL && <a href={import.meta.env.VITE_IMPRINT_URL}>Impressum</a>}
-            {import.meta.env.VITE_PRIVACY_URL && <a href={import.meta.env.VITE_PRIVACY_URL}>Datenschutz</a>}
+    <GameStage scene="forest">
+      <div className="sub-screen">
+        <ScreenHeader title="INFOS" />
+        <section className="wood-panel">
+          <div className="wood-panel__inner">
+            <h2 className="panel-heading">So spielst du</h2>
+            <ol className="info-steps">
+              {STEPS.map(([t, d], i) => <li key={t} className="info-step"><span className="info-step__num">{i + 1}</span><span><b>{t}</b><span>{d}</span></span></li>)}
+            </ol>
           </div>
-        </div>
-      </PageTransition>
-    </AppLayout>
+        </section>
+        <section className="wood-panel">
+          <div className="wood-panel__inner">
+            <h2 className="panel-heading">Sterne sammeln</h2>
+            <div className="info-stars">
+              <div><Stars count={3} /> ohne Hinweis und höchstens 3 Fehlklicks</div>
+              <div><Stars count={2} /> max. 1 Hinweis und höchstens 8 Fehlklicks</div>
+              <div><Stars count={1} /> alle Froggys gefunden</div>
+            </div>
+            <p className="panel-note">Für den ersten Abschluss gibt es XP. Wiederholungen verbessern deine Bestzeit.</p>
+          </div>
+        </section>
+        <section className="wood-panel">
+          <div className="wood-panel__inner">
+            <h2 className="panel-heading">Jeden Mittwoch ein neues Level</h2>
+            <p className="panel-note" style={{ fontSize: 14 }}>Jeden Mittwoch um 18 Uhr erscheint ein neues Suchbild mit frisch versteckten Froggys. Nächstes Level in <b className="countdown" style={{ color: '#9dff6a' }}><NewLevelCountdown /></b>.</p>
+            <p className="panel-note">Mit einem Google Konto bleibt deine Reise gespeichert. Pause hält die Uhr an; beim App-Wechsel pausiert das Spiel automatisch.</p>
+            <div className="info-links">
+              <StoneButton size="sm" to="/play">Jetzt spielen</StoneButton>
+              {import.meta.env.VITE_SUPPORT_EMAIL && <StoneButton tone="wood" size="sm" onClick={() => { location.href = `mailto:${import.meta.env.VITE_SUPPORT_EMAIL}` }}>Kontakt</StoneButton>}
+              {import.meta.env.VITE_INSTAGRAM_URL && <a className="text-link" href={import.meta.env.VITE_INSTAGRAM_URL} target="_blank" rel="noreferrer">Instagram</a>}
+              {import.meta.env.VITE_IMPRINT_URL && <a className="text-link" href={import.meta.env.VITE_IMPRINT_URL}>Impressum</a>}
+              {import.meta.env.VITE_PRIVACY_URL && <a className="text-link" href={import.meta.env.VITE_PRIVACY_URL}>Datenschutz</a>}
+            </div>
+          </div>
+        </section>
+      </div>
+    </GameStage>
   )
 }

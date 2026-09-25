@@ -12,6 +12,7 @@ export function AdminLevelsPage() {
   const [levels, setLevels] = useState<Level[]>([])
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
+  const [now, setNow] = useState(0)
 
   useEffect(() => {
     void (async () => {
@@ -26,6 +27,7 @@ export function AdminLevelsPage() {
         })
       )
       setCounts(c)
+      setNow(Date.now())
       setLoading(false)
     })()
   }, [])
@@ -53,7 +55,7 @@ export function AdminLevelsPage() {
               {levels.map((l) => (
                 <tr key={l.id}>
                   <td>{l.title}</td>
-                  <td>{l.status}</td>
+                  <td>{l.status === 'published' ? (l.publishAt && l.publishAt > now ? '🗓 Geplant' : '✅ Live') : '✏️ Entwurf'}</td>
                   <td>{l.publishAt ? fmt(l.publishAt) : '—'}</td>
                   <td>{counts[l.id] ?? l.frogCount}</td>
                   <td>

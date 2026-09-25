@@ -1,79 +1,54 @@
-import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
-import { useSettingsStore } from '../../stores/settingsStore'
+import { Confetti } from '../game-ui/Confetti'
+import { Froggy3D } from '../game-ui/Froggy3D'
+import { StoneButton } from '../game-ui/PlayButtons'
+import { StarIcon } from '../game-ui/Stars'
+import { formatTime } from '../../lib/gameRules'
 
 interface Props {
   title: string
   durationMs: number
   clicks: number
   misses: number
+  hintsUsed: number
+  stars: number
+  /** XP beim ersten Abschluss, sonst null */
+  xp: number | null
+  status: string
+  continueLabel: string
+  onContinue: () => void
   onReplay: () => void
+  busy?: boolean
+  onRetrySave?: () => void
 }
 
-function fmt(ms: number) {
-  const s = Math.floor(ms / 1000)
-  const m = Math.floor(s / 60)
-  const rs = s % 60
-  return m > 0 ? `${m}:${rs.toString().padStart(2, '0')}` : `${rs}s`
-}
-
-export function VictoryOverlay({ title, durationMs, clicks, misses, onReplay }: Props) {
-  const reduce = useSettingsStore((s) => s.reduceMotion)
-
+export function VictoryOverlay({ title, durationMs, clicks, misses, hintsUsed, stars, xp, status, continueLabel, onContinue, onReplay, busy, onRetrySave }: Props) {
   return (
-    <motion.div
-      role="dialog"
-      aria-modal
-      aria-labelledby="victory-title"
-      className="victory-scrim"
-      initial={reduce ? false : { opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-    >
-      <motion.div
-        initial={reduce ? false : { opacity: 0, y: 18, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-        className="victory-modal"
-      >
-        <div className="victory-modal__accent" />
-        <div className="victory-modal__body">
-          <div className="victory-modal__icon" aria-hidden>
-            🐸
+    <div className="victory" role="dialog" aria-modal="true" aria-label="Alle Froggys gefunden">
+      <div className="victory__rays" aria-hidden />
+      <Confetti />
+      <div className="victory__frog"><Froggy3D variant="party" fallback={<span className="froggy-fallback" aria-hidden>🐸</span>} /></div>
+      <div className="victory__box wood-panel">
+        <div className="wood-panel__inner">
+          <div className="game-title victory__title">GESCHAFFT!</div>
+          <p className="wood-text" style={{ margin: 0, fontSize: 16 }}>{title}</p>
+          <div className="victory__stars" role="img" aria-label={`${stars} von 3 Sternen`}>
+            {[0, 1, 2].map(i => <StarIcon key={i} on={i < stars} />)}
           </div>
-          <h2 id="victory-title" className="victory-modal__title">
-            Geschafft
-          </h2>
-          <p className="victory-modal__subtitle">{title}</p>
-
-          <div className="victory-stats">
-            <div className="victory-stat">
-              <div className="victory-stat__value">{fmt(durationMs)}</div>
-              <div className="victory-stat__label">Zeit</div>
-            </div>
-            <div className="victory-stat">
-              <div className="victory-stat__value">{clicks}</div>
-              <div className="victory-stat__label">Klicks</div>
-            </div>
-            <div className="victory-stat">
-              <div className="victory-stat__value">{misses}</div>
-              <div className="victory-stat__label">Fehltreffer</div>
-            </div>
+          <div className="play-timer victory__time">{formatTime(durationMs)}</div>
+          <div className="stat-row">
+            <span className="stat-chip"><b>{clicks}</b><span>Klicks</span></span>
+            <span className="stat-chip"><b>{misses}</b><span>Fehlklicks</span></span>
+            <span className="stat-chip"><b>{hintsUsed}</b><span>Hinweise</span></span>
           </div>
-
-          <div className="victory-actions">
-            <button type="button" className="btn btn--primary btn--block btn--lg" onClick={onReplay}>
-              Nochmal spielen
-            </button>
-            <Link to="/" className="btn btn--ghost btn--block">
-              Zur Lobby
-            </Link>
-            <Link to="/history" className="btn btn--ghost btn--block">
-              Historie
-            </Link>
+          {xp != null ? <span className="victory__xp">+{xp} XP</span> : <p className="panel-note" style={{ textAlign: 'center' }}>Wiederholung · deine Bestzeit zählt</p>}
+          <p className="panel-note" role="status" style={{ textAlign: 'center' }}>{status}</p>
+          <div className="game-modal__actions">
+            {onRetrySave && <StoneButton tone="gold" onClick={onRetrySave}>Speichern wiederholen</StoneButton>}
+            <StoneButton size="lg" onClick={onContinue} disabled={busy}>{continueLabel} ➜</StoneButton>
+            <StoneButton tone="wood" size="sm" onClick={onReplay} disabled={busy}>Nochmal spielen</StoneButton>
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   )
 }

@@ -55,8 +55,8 @@ VITE_ADMIN_UIDS=firebaseUid1,firebaseUid2
 | `/` | Lobby |
 | `/login` | Google / Demo |
 | `/play` | Aktuelles Level |
-| `/history` | Natur-Pfad / Zeitleiste |
-| `/settings` | Ton, Theme, Motion |
+| `/history` | Level-Karte (Levelauswahl, Froggy springt nach jedem Abschluss weiter) |
+| `/settings` | Musik, Sound, Lautstärke, Animationen, Profil |
 | `/info` | Spielinfos |
 | `/admin` | Admin-Home (geschützt) |
 | `/admin/levels` | Level-Liste |
@@ -72,6 +72,16 @@ VITE_ADMIN_UIDS=firebaseUid1,firebaseUid2
 ## Sound
 
 Originale Musik und Spieleffekte werden mit Web Audio erzeugt. Sie starten nach der ersten Interaktion. Musik, SFX und Lautstärke lassen sich live ändern. Die 3D Figur wird über Three.js bei Bedarf geladen.
+
+## Spielgrafiken
+
+Alle Screens (Lobby, Karte, Spiel, Einstellungen, Infos, Level Studio) nutzen dieselben Original-Assets aus `public/assets/ui/` und `public/assets/`. Für das Handy werden sie zugeschnitten und als WebP nach `public/assets/game/` exportiert (~2 MB statt ~40 MB):
+
+```bash
+node scripts/build-game-assets.mjs
+```
+
+Das Skript entfernt außerdem den gemalten Frosch aus dem Lobby-Hintergrund (`bg-lobby-phone.webp`), weil dort der animierte 3D-Froggy sitzt. Nach dem Austauschen einer Grafik einfach erneut ausführen. Die Pfade stehen zentral in `src/lib/gameAssets.ts`.
 
 ## Build
 
