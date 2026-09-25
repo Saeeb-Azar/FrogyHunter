@@ -73,4 +73,6 @@ export interface UserSettings {
   volume: number
   reduceMotion: boolean
   theme: 'dark' | 'light'
+  /** 'preset:<id>' oder ein kleines Bild als data-URL */
+  avatar?: string | null
 }

@@ -17,8 +17,7 @@ export function PlayAssetButton({ to, onClick, label = 'Spielen', disabled, clas
   const cls = `play-asset${disabled ? ' is-disabled' : ''}${className ? ` ${className}` : ''}`
   const inner = <>
     {ribbon && <span className="play-asset__ribbon">{ribbon}</span>}
-    <img src={ASSET.playButton} alt="" draggable={false} />
-    <span className="play-asset__shine" aria-hidden />
+    <span className="play-asset__body"><img src={ASSET.playButton} alt="" draggable={false} /><span className="play-asset__shine" aria-hidden /></span>
   </>
   if (to && !disabled) return <Link to={to} className={cls} aria-label={label}>{inner}</Link>
   return <button type="button" className={cls} onClick={onClick} disabled={disabled} aria-label={label}>{inner}</button>

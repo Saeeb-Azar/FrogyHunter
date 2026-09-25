@@ -40,6 +40,19 @@ for (const [src, name, width] of UI) {
   console.log(`${name}.webp`, `${info.width}x${info.height}`)
 }
 
+// Gefundener Froggy: gemalter Frosch-Kopf von froggy_anzahl.png (gleicher Stil wie die Suchbilder)
+{
+  const t = await sharp('public/assets/ui/froggy_anzahl.png').trim({ threshold: 8 }).toBuffer({ resolveWithObject: true })
+  const L = Math.round(t.info.width * 0.4) + 20
+  const { data, info } = await sharp(t.data).extract({ left: L, top: 0, width: 290, height: 116 }).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  for (let y = Math.floor(info.height * 0.7); y < info.height; y++) for (let x = Math.floor(info.width * 0.72); x < info.width; x++) {
+    const i = (y * info.width + x) * 4
+    if (data[i] > data[i + 1] * 1.02) data[i + 3] = 0 // Holzkante (bräunlich) ausblenden
+  }
+  const out = await sharp(data, { raw: info }).trim({ threshold: 2 }).resize({ width: 220 }).webp({ quality: 90, alphaQuality: 95 }).toFile(`${OUT}/froggy-found.webp`)
+  console.log('froggy-found.webp', `${out.width}x${out.height}`)
+}
+
 // Pergament-Tafel (RGB mit dunklem Rand → Schwellwert-Zuschnitt, als 9-Slice-Panel genutzt)
 {
   const t = await sharp('public/assets/ui/lvl_kachel_v2.png').trim({ threshold: 30 }).toBuffer()

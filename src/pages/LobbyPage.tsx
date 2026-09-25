@@ -14,6 +14,7 @@ import { formatTime, starsForRun } from '../lib/gameRules'
 import { playSound } from '../audio/soundManager'
 import { isUserAdmin } from '../services/adminService'
 import { getProgress, listCompletedForUser } from '../services/progressService'
+import { loadUserSettingsRemote } from '../services/usersService'
 import { useSettingsStore } from '../stores/settingsStore'
 import type { Level, UserProgress } from '../types/models'
 
@@ -50,6 +51,11 @@ export function LobbyPage() {
     return () => { active = false; clearInterval(timer) }
   }, [user])
 
+  // Profilbild & Einstellungen vom Konto übernehmen (anderes Gerät)
+  useEffect(() => {
+    if (!user || demoMode) return
+    void loadUserSettingsRemote(user.uid).then(r => { if (r) useSettingsStore.getState().hydrateFromRemote({ ...r, reduceMotion: false }) }).catch(() => {})
+  }, [user, demoMode])
   useEffect(() => {
     const t = setTimeout(() => frog.current?.celebrate(), 1400)
     return () => clearTimeout(t)

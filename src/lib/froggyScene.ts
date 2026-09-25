@@ -61,6 +61,69 @@ function glowTexture() {
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
 
+/** Kleiner deterministischer Zufall für die Hautmuster. */
+function seeded(seed: number) {
+  let t = seed
+  return () => { t = (t * 1664525 + 1013904223) >>> 0; return t / 4294967296 }
+}
+
+/** Froschhaut: dunklerer Rücken, hellere Flanken, weiche Flecken, feine Poren (Farbe + Relief). */
+function skinTextures() {
+  const W = 512, H = 256
+  const c = document.createElement('canvas'); c.width = W; c.height = H
+  const g = c.getContext('2d')!
+  const grad = g.createLinearGradient(0, 0, 0, H)
+  grad.addColorStop(0, '#2f6a17'); grad.addColorStop(0.35, '#4a8f22'); grad.addColorStop(0.62, '#6aa92e'); grad.addColorStop(1, '#a9c95a')
+  g.fillStyle = grad; g.fillRect(0, 0, W, H)
+  const r = seeded(7)
+  g.globalCompositeOperation = 'multiply'
+  for (let i = 0; i < 38; i++) {
+    const x = r() * W, y = r() * H * 0.62, rad = 6 + r() * 16
+    const sp = g.createRadialGradient(x, y, 0, x, y, rad)
+    sp.addColorStop(0, 'rgba(40,80,20,0.85)'); sp.addColorStop(0.7, 'rgba(50,95,25,0.4)'); sp.addColorStop(1, 'rgba(60,110,30,0)')
+    g.fillStyle = sp; g.beginPath(); g.ellipse(x, y, rad * 1.3, rad, r() * 3, 0, Math.PI * 2); g.fill()
+  }
+  g.globalCompositeOperation = 'source-over'
+  for (let i = 0; i < 2600; i++) {
+    const x = r() * W, y = r() * H, a = r()
+    g.fillStyle = a > 0.55 ? `rgba(235,255,170,${0.08 + r() * 0.12})` : `rgba(20,50,10,${0.08 + r() * 0.14})`
+    g.fillRect(x, y, 1 + r() * 1.5, 1 + r() * 1.5)
+  }
+  const bump = document.createElement('canvas'); bump.width = W; bump.height = H
+  const b = bump.getContext('2d')!
+  b.fillStyle = '#808080'; b.fillRect(0, 0, W, H)
+  const r2 = seeded(11)
+  for (let i = 0; i < 1800; i++) {
+    const x = r2() * W, y = r2() * H, rad = 0.8 + r2() * 2.4
+    b.fillStyle = `rgba(255,255,255,${0.25 + r2() * 0.35})`; b.beginPath(); b.arc(x, y, rad, 0, Math.PI * 2); b.fill()
+  }
+  const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace; map.wrapS = THREE.RepeatWrapping
+  const bumpMap = new THREE.CanvasTexture(bump); bumpMap.wrapS = THREE.RepeatWrapping
+  return { map, bumpMap }
+}
+
+/** Frosch-Auge: goldene Iris mit Maserung, dunkler Rand, waagerechte Pupille, Glanzpunkte. */
+function irisTexture() {
+  const S = 256
+  const c = document.createElement('canvas'); c.width = c.height = S
+  const g = c.getContext('2d')!
+  const m = S / 2
+  const base = g.createRadialGradient(m, m, 10, m, m, m)
+  base.addColorStop(0, '#f7d56a'); base.addColorStop(0.55, '#d99a2b'); base.addColorStop(0.86, '#8a5212'); base.addColorStop(1, '#2a1606')
+  g.fillStyle = base; g.beginPath(); g.arc(m, m, m, 0, Math.PI * 2); g.fill()
+  const r = seeded(3)
+  for (let i = 0; i < 140; i++) {
+    const a = r() * Math.PI * 2, r0 = 30 + r() * 20, r1 = 90 + r() * 30
+    g.strokeStyle = r() > 0.5 ? 'rgba(255,235,150,0.35)' : 'rgba(90,50,10,0.35)'; g.lineWidth = 1 + r() * 1.5
+    g.beginPath(); g.moveTo(m + Math.cos(a) * r0, m + Math.sin(a) * r0); g.lineTo(m + Math.cos(a) * r1, m + Math.sin(a) * r1); g.stroke()
+  }
+  g.fillStyle = '#0a0806'; g.beginPath(); g.ellipse(m, m, 72, 34, 0, 0, Math.PI * 2); g.fill()
+  g.fillStyle = 'rgba(255,255,255,0.95)'; g.beginPath(); g.ellipse(m - 40, m - 44, 22, 17, -0.4, 0, Math.PI * 2); g.fill()
+  g.fillStyle = 'rgba(255,255,255,0.7)'; g.beginPath(); g.arc(m + 38, m + 30, 9, 0, Math.PI * 2); g.fill()
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
+
 export function mountFroggyScene(container: HTMLElement, options: FroggySceneOptions = {}): FroggySceneHandle {
   const variant = options.variant ?? 'hero'
   let renderer: THREE.WebGLRenderer
@@ -106,15 +169,14 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
     return m
   }
 
-  const green = phys(0x4f9a22, { sheen: 0.25, sheenColor: new THREE.Color(0xa8d86a) })
-  const lightGreen = phys(0x74b332)
+  const skin = skinTextures()
+  textures.push(skin.map, skin.bumpMap)
+  const green = phys(0xffffff, { map: skin.map, bumpMap: skin.bumpMap, bumpScale: 0.6, roughness: 0.38, clearcoat: 1, clearcoatRoughness: 0.14, sheen: 0.3, sheenColor: new THREE.Color(0x9fd060) })
+  const lightGreen = phys(0x6fae30, { bumpMap: skin.bumpMap, bumpScale: 0.4, clearcoat: 0.9, clearcoatRoughness: 0.18 })
   const darkGreen = std(0x24501a, 0.6)
   const spotMat = phys(0x2f6f18)
-  const cream = phys(0xe6cf86, { clearcoat: 0.3 })
-  const black = std(0x10201a, 0.08, { metalness: 0.1 })
+  const cream = phys(0xdcc47c, { bumpMap: skin.bumpMap, bumpScale: 0.3, clearcoat: 0.5, roughness: 0.5 })
   const white = std(0xffffff, 0.15, { emissive: 0xffffff, emissiveIntensity: 0.35 })
-  const iris = std(0x6b4a1c, 0.3)
-  const pink = std(0xf6918a, 0.6)
   const tongueMat = phys(0xff6f8e, { clearcoat: 1, roughness: 0.25 })
 
   const sphere = new THREE.SphereGeometry(1, 32, 24)
@@ -201,27 +263,45 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
   mesh(head, green, [0, 0, 0], [0.94, 0.58, 0.68])
   mesh(head, lightGreen, [0, -0.12, 0.45], [0.74, 0.29, 0.25])
   const pupils: THREE.Mesh[] = []
+  const hips: THREE.Group[] = []
+  const shins: THREE.Group[] = []
+  const irisTex = irisTexture()
+  textures.push(irisTex)
+  const irisMat = new THREE.MeshBasicMaterial({ map: irisTex, transparent: true })
+  mats.push(irisMat)
+  const irisGeo = new THREE.CircleGeometry(1, 40)
   const lids: THREE.Mesh[] = []
   for (const side of [-1, 1]) {
     mesh(head, green, [side * 0.48, 0.42, 0.07], [0.38, 0.45, 0.35])
-    mesh(head, std(0xfffdf2, 0.2), [side * 0.48, 0.47, 0.3], [0.28, 0.32, 0.18])
-    const pupil = mesh(head, black, [side * 0.48, 0.47, 0.4], [0.2, 0.25, 0.12])
-    pupils.push(pupil)
-    mesh(pupil, iris, [0, 0, 0.35], [0.62, 0.62, 0.5])
-    mesh(pupil, black, [0, 0, 0.62], [0.42, 0.44, 0.4])
-    mesh(pupil, white, [-0.32, 0.38, 0.85], [0.26, 0.22, 0.14])
-    mesh(pupil, white, [0.28, -0.25, 0.9], [0.1, 0.09, 0.1])
+    mesh(head, std(0xf3e6c2, 0.25), [side * 0.48, 0.47, 0.3], [0.28, 0.32, 0.18])
+    const irisDisc = mesh(head, irisMat, [side * 0.48, 0.49, 0.484], [0.25, 0.29, 1], irisGeo)
+    irisDisc.userData.base = 0.29
+    pupils.push(irisDisc)
     const lid = mesh(head, green, [side * 0.48, 0.5, 0.33], [0.3, 0.001, 0.2])
     lids.push(lid)
-    mesh(head, pink, [side * 0.64, -0.13, 0.57], [0.15, 0.08, 0.03])
     mesh(head, darkGreen, [side * 0.15, 0.03, 0.66], [0.03, 0.02, 0.012])
     // Beine, Arme, Füße
-    mesh(frog, green, [side * 0.72, 0.3, 0.06], [0.44, 0.36, 0.48])
+    // Hinterbein mit Gelenk: sitzt eingeklappt, streckt sich beim Absprung nach hinten
+    const hip = new THREE.Group()
+    hip.position.set(side * 0.62, 0.36, -0.12)
+    hip.userData.side = side
+    frog.add(hip)
+    mesh(hip, green, [side * 0.1, -0.06, 0.18], [0.44, 0.36, 0.48])
+    const shin = new THREE.Group()
+    shin.position.set(side * 0.14, -0.2, 0.42)
+    hip.add(shin)
+    mesh(shin, lightGreen, [0, 0, -0.22], [0.13, 0.12, 0.3])
+    const hindFoot = mesh(shin, lightGreen, [0, -0.08, -0.5], [0.16, 0.05, 0.26])
+    for (let t = 0; t < 3; t++) mesh(hindFoot, cream, [(t - 1) * 0.55, 0, -0.9], [0.28, 0.9, 0.22])
+    hips.push(hip); shins.push(shin)
     const arm = mesh(body, lightGreen, [side * 0.58, 0.38, 0.5], [0.16, 0.38, 0.17])
     arm.rotation.z = side * 0.22
     arm.userData.side = side
     mesh(frog, lightGreen, [side * 0.58, 0.09, 0.7], [0.27, 0.1, 0.28])
-    for (let toe = 0; toe < 3; toe++) mesh(frog, lightGreen, [side * 0.58 + (toe - 1) * 0.16, 0.075, 0.9], [0.095, 0.065, 0.16])
+    for (let toe = 0; toe < 3; toe++) {
+      mesh(frog, lightGreen, [side * 0.58 + (toe - 1) * 0.16, 0.075, 0.9], [0.085, 0.06, 0.16])
+      mesh(frog, cream, [side * 0.58 + (toe - 1) * 0.17, 0.07, 1.04], [0.055, 0.045, 0.05])
+    }
   }
   const arms = body.children.filter(c => c.userData.side) as THREE.Mesh[]
   const smile = new THREE.CatmullRomCurve3([
@@ -289,9 +369,13 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
 
   // ---------- Animation ----------
   let disposed = false, raf = 0, time = 0, last = 0, visible = !document.hidden
-  let celebration = -10, hopStart = -10, hopDur = 0.45
+  let celebration = -10, hopStart = -10, hopDur = 0.45, hopHeight = 0.5, hopSpin = 0
+  // Zufällige Lobby-Aktionen: umschauen, hüpfen, umdrehen, quaken
+  type Action = 'look' | 'hop' | 'turn' | 'croak' | 'spinhop'
+  let action: Action | null = null, actionStart = 0, nextAction = 2.5, lookDir = 1, croakBoost = 0
+  const startHop = (dur: number, height: number, spinAmount = 0) => { hopStart = time; hopDur = dur; hopHeight = height; hopSpin = spinAmount }
   let facing = 0, facingTarget = 0
-  let tongueStart = -10, nextTongue = 5
+  let tongueStart = -10, nextTongue = 5, lookOffset = 0
   const pointer = new THREE.Vector2()
   const pointerMove = (e: PointerEvent) => {
     const r = container.getBoundingClientRect()
@@ -316,7 +400,7 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
     const dt = last ? Math.min((stamp - last) / 1000, 0.05) : 0
     last = stamp
     time += dt
-    const still = options.reduceMotion
+    const still = false
 
     if (!still) {
       // Atmen + Kehlsack
@@ -328,41 +412,77 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
 
       // Kopf folgt Finger/Maus
       const lookX = variant === 'hero' && fly && time - tongueStart > 0.6 ? pointer.x * 0.5 + (flyPos.x / 3) * 0.5 : pointer.x
-      head.rotation.y += (lookX * 0.2 - head.rotation.y) * Math.min(dt * 5, 1)
+      head.rotation.y += (lookX * 0.2 + lookOffset - head.rotation.y) * Math.min(dt * 5, 1)
       head.rotation.x += (pointer.y * 0.1 - head.rotation.x) * Math.min(dt * 5, 1)
 
       // Blinzeln
       const blinkPhase = time % 4.3
       const blink = blinkPhase > 4.08 ? Math.sin((blinkPhase - 4.08) / 0.22 * Math.PI) : 0
-      pupils.forEach(p => { p.scale.y = 0.25 * Math.max(0.03, 1 - blink) })
-      lids.forEach(l => { l.scale.y = 0.34 * blink + 0.001 })
+      pupils.forEach(p => { p.scale.y = p.userData.base * Math.max(0.03, 1 - blink) })
+      lids.forEach(l => { l.visible = blink > 0.02; l.scale.y = 0.34 * blink + 0.001 })
 
-      // Sprünge
-      let lift = 0, squash = 1, spin = 0
+      // ---------- Zufällige Aktionen (nur Lobby) ----------
+      if (variant === 'hero') {
+        if (!action && time > nextAction && time - celebration > 1.4 && time - hopStart > hopDur + 0.3) {
+          const roll = Math.random()
+          action = roll < 0.28 ? 'look' : roll < 0.52 ? 'hop' : roll < 0.7 ? 'turn' : roll < 0.86 ? 'croak' : 'spinhop'
+          actionStart = time
+          lookDir = Math.random() > 0.5 ? 1 : -1
+          if (action === 'hop') startHop(0.75, 0.55)
+          if (action === 'spinhop') startHop(1.0, 0.9, Math.PI * 2 * lookDir)
+          if (action === 'turn') { facingTarget = lookDir * 1.2; startHop(0.6, 0.35) }
+        }
+        const ae = time - actionStart
+        if (action === 'look') {
+          const k = ae < 0.5 ? easeOut(ae / 0.5) : ae < 1.3 ? 1 : ae < 1.7 ? -1 : ae < 2.3 ? 1 - easeOut((ae - 1.7) / 0.6) : 0
+          lookOffset = k * lookDir * 0.75
+          if (ae > 2.3) { action = null; lookOffset = 0 }
+        } else if (action === 'turn') {
+          if (ae > 1.8 && ae < 1.82 && facingTarget !== 0) { facingTarget = 0; startHop(0.6, 0.35) }
+          if (ae > 2.6) action = null
+        } else if (action === 'croak') {
+          croakBoost = ae < 1.4 ? Math.max(0, Math.sin(ae / 1.4 * Math.PI * 4)) : 0
+          if (ae > 1.4) { action = null; croakBoost = 0 }
+        } else if (action && ae > hopDur + 0.4) action = null
+        if (!action && nextAction < time) nextAction = time + 2.2 + Math.random() * 3.5
+      }
+      if (croakBoost > 0) throat.scale.set(0.3 + croakBoost * 0.28, 0.2 + croakBoost * 0.24, 0.16 + croakBoost * 0.3)
+
+      // ---------- Realistischer Sprung: Ducken → Absprung → Flug → Landung ----------
+      let lift = 0, squash = 1, spin = 0, legs = 0, pitch = 0
+      const jump = (e: number, dur: number, height: number) => {
+        const t = e / dur
+        if (t < 0.22) { const k = Math.sin(t / 0.22 * Math.PI * 0.5); return { lift: 0, squash: 1 - k * 0.2, legs: -k * 0.25, pitch: k * 0.18, air: 0 } }
+        if (t < 0.82) {
+          const a = (t - 0.22) / 0.6
+          return { lift: 4 * a * (1 - a) * height, squash: 1.14 - a * 0.14, legs: a < 0.5 ? 1 : 1 - (a - 0.5) * 2 * 0.8, pitch: -0.35 + a * 0.55, air: a }
+        }
+        const k = Math.sin((t - 0.82) / 0.18 * Math.PI)
+        return { lift: 0, squash: 1 - k * 0.18, legs: -k * 0.2, pitch: k * 0.12, air: 1 }
+      }
       const ce = time - celebration
       if (ce < 1.2) {
-        const t = ce / 1.2
-        lift = Math.sin(t * Math.PI) * 1.1
-        spin = easeOut(t) * Math.PI * 2
-        squash = t < 0.12 ? 1 - t * 2 : 1 + Math.sin(t * Math.PI) * 0.12
+        const j = jump(ce, 1.2, variant === 'token' ? 0.3 : 1.3)
+        lift = j.lift; squash = j.squash; legs = j.legs; pitch = j.pitch
+        spin = easeOut(j.air) * Math.PI * 2
+        arms.forEach(a => { a.rotation.z = a.userData.side * (0.22 + (j.air > 0 && j.air < 1 ? 1.3 : 0)) })
       }
       const he = time - hopStart
       if (he < hopDur) {
-        const t = he / hopDur
-        lift = Math.max(lift, Math.sin(t * Math.PI) * (variant === 'token' ? 0.22 : 0.5))
-        squash = t < 0.15 ? 1 - (0.15 - Math.abs(t - 0.075)) * 1.2 : 1 + Math.sin(t * Math.PI) * 0.15
-      } else if (he < hopDur + 0.18) {
-        squash = 1 - Math.sin((he - hopDur) / 0.18 * Math.PI) * 0.14
+        const j = jump(he, hopDur, variant === 'token' ? 0.22 : hopHeight)
+        if (ce >= 1.2) { lift = j.lift; squash = j.squash; legs = j.legs; pitch = j.pitch; spin = hopSpin * easeOut(j.air) }
       }
       if (variant === 'party') {
-        const pt = (time % 0.9) / 0.9
-        lift = Math.max(lift, Math.abs(Math.sin(pt * Math.PI)) * 0.8)
+        const pt = time % 0.95
+        const j = jump(pt, 0.95, 0.85)
+        lift = Math.max(lift, j.lift); squash = j.squash; legs = j.legs; pitch = j.pitch
         arms.forEach(a => { a.rotation.z = a.userData.side * (0.22 + Math.abs(Math.sin(time * 7)) * 1.4) })
         facingTarget = Math.sin(time * 1.4) * 0.5
-      } else if (variant === 'hero' && ce > 1.2 && he > hopDur) {
-        const periodic = time % 12
-        if (periodic > 10.8 && periodic < 11.5) lift = Math.sin((periodic - 10.8) / 0.7 * Math.PI) * 0.3
       }
+      if (ce >= 1.2 && variant !== 'party') arms.forEach(a => { a.rotation.z += (a.userData.side * 0.22 - a.rotation.z) * Math.min(dt * 8, 1) })
+      hips.forEach(h => { h.rotation.x = Math.max(0, legs) * 1.05; h.position.y = 0.36 + Math.min(0, legs) * 0.2 })
+      shins.forEach(sh => { sh.rotation.x = Math.max(0, legs) * 0.9 })
+      body.rotation.x = pitch
       frog.position.y = baseY + lift
       frog.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash))
       facing += (facingTarget - facing) * Math.min(dt * 6, 1)
@@ -427,20 +547,22 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
     last = 0
     if (visible && !disposed) raf = requestAnimationFrame(draw)
   }
-  const lost = (e: Event) => { e.preventDefault(); cancelAnimationFrame(raf); options.onError?.() }
+  const lost = (e: Event) => { e.preventDefault(); cancelAnimationFrame(raf) }
+  const restored = () => { if (!disposed) { last = 0; resize(); raf = requestAnimationFrame(draw) } }
   const observer = new ResizeObserver(resize)
   observer.observe(container)
   window.addEventListener('pointermove', pointerMove)
   document.addEventListener('pointerleave', pointerLeave)
   document.addEventListener('visibilitychange', visibility)
   renderer.domElement.addEventListener('webglcontextlost', lost)
+  renderer.domElement.addEventListener('webglcontextrestored', restored)
   resize()
   raf = requestAnimationFrame(draw)
   options.onReady?.()
 
   return {
     celebrate() { celebration = time },
-    hop(durationMs = 450) { hopDur = durationMs / 1000; hopStart = time },
+    hop(durationMs = 450) { startHop(durationMs / 1000, 0.5, 0) },
     face(angle: number) { facingTarget = angle },
     dispose() {
       if (disposed) return
@@ -451,6 +573,7 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
       document.removeEventListener('pointerleave', pointerLeave)
       document.removeEventListener('visibilitychange', visibility)
       renderer.domElement.removeEventListener('webglcontextlost', lost)
+      renderer.domElement.removeEventListener('webglcontextrestored', restored)
       const geometries = new Set<THREE.BufferGeometry>()
       scene.traverse(o => { if (o instanceof THREE.Mesh) geometries.add(o.geometry) })
       geometries.forEach(g => g.dispose())
