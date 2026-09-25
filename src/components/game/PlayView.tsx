@@ -91,14 +91,17 @@ export function PlayView({ level, markers, uid, levelNumber, testMode, onExitTes
     void getProgress(uid, level.id).then(p => {
       if (!active) return
       setWasCompleted(Boolean(p?.completed))
-      if (p?.activeAttempt) replaceRun(p.activeAttempt)
+      // Nur Funde behalten, die es im (evtl. nachträglich bearbeiteten) Level noch gibt
+      const ids = new Set(markers.map(m => m.id))
+      const keep = (found: string[]) => found.filter(f => ids.has(f))
+      if (p?.activeAttempt) replaceRun({ ...p.activeAttempt, foundFroggys: keep(p.activeAttempt.foundFroggys) })
       else if (p?.completed) replaceRun(createRun())
       else if (p) replaceRun({ ...createRun(), startedAt: p.startedAt, durationMs: p.durationMs ?? 0,
-        foundFroggys: p.foundFroggys, clicks: p.clicks, misses: p.misses })
+        foundFroggys: keep(p.foundFroggys), clicks: p.clicks, misses: p.misses })
       setInitialized(true)
     }).catch(() => { if (active) setLoadError(true) })
     return () => { active = false }
-  }, [uid, level.id, testMode, replaceRun])
+  }, [uid, level.id, testMode, replaceRun, markers])
   const pause = useCallback(() => {
     if (!runningRef.current) return
     const next = snapshot()

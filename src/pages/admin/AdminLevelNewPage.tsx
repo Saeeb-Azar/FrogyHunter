@@ -28,13 +28,13 @@ export function AdminLevelNewPage() {
     finally { setBusy(false) }
   }
   return <form className="card card--pad" style={{ maxWidth: 600 }} onSubmit={e => { e.preventDefault(); void submit() }}>
-    <p className="hunt-eyebrow">1 BILD · 2 FUNDSTELLEN · 3 TEST · 4 VERÖFFENTLICHEN</p><h2 className="h2">Ein neues Waldabenteuer</h2>
+    <p className="hunt-eyebrow">1 Bild · 2 Froggys · 3 Test · 4 Live</p><h2 className="h2">Ein neues Waldabenteuer</h2>
     <p className="studio-help">Lade das fertige Suchbild mit den versteckten Froggys hoch. Im nächsten Schritt markierst du ihre Positionen.</p>
     {error && <p className="studio-status" role="alert">{error}</p>}
     <div className="field"><label htmlFor="new-title">Titel</label><input id="new-title" className="input" maxLength={100} required value={title} onChange={e => setTitle(e.target.value)} /></div>
     <div className="field"><label htmlFor="new-date">Geplante Veröffentlichung · Europe/Berlin</label><input id="new-date" className="input" type="datetime-local" value={publishAt} onChange={e => setPublishAt(e.target.value)} /></div>
-    <div className="field"><label htmlFor="new-image">Suchbild · JPG, PNG oder WebP · bis 12 MB</label><input id="new-image" type="file" accept="image/jpeg,image/png,image/webp" required onChange={e => setFile(e.target.files?.[0] ?? null)} /></div>
+    <div className="field"><span className="studio-label">Suchbild · JPG, PNG oder WebP · bis 12 MB</span><label className="studio-file"><input id="new-image" type="file" accept="image/jpeg,image/png,image/webp" required onChange={e => setFile(e.target.files?.[0] ?? null)} /><span>{file ? `✓ ${file.name}` : '📷 Bild auswählen'}</span></label></div>
     <p className="studio-help">Bleibt zunächst ein Entwurf. Vor der Freigabe musst du alle Froggys im Test finden.</p>
-    <button className="btn btn--primary" type="submit" disabled={busy}>{busy ? 'Bild wird gespeichert …' : 'Entwurf anlegen & markieren'}</button>
+    <button className="btn btn--primary studio-submit" type="submit" disabled={busy}>{busy ? 'Bild wird gespeichert …' : 'Entwurf anlegen & markieren'}</button>
   </form>
 }

@@ -5,7 +5,7 @@ import { listLevelsForAdmin } from '../../services/levelsService'
 import type { Level } from '../../types/models'
 
 function fmt(ts: number) {
-  return new Intl.DateTimeFormat('de-DE', { dateStyle: 'short' }).format(new Date(ts))
+  return new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Berlin' }).format(new Date(ts))
 }
 
 export function AdminLevelsPage() {
@@ -20,12 +20,7 @@ export function AdminLevelsPage() {
       const list = await listLevelsForAdmin()
       setLevels(list)
       const c: Record<string, number> = {}
-      await Promise.all(
-        list.map(async (l) => {
-          const m = await getMarkers(l.id)
-          c[l.id] = m.length
-        })
-      )
+      await Promise.all(list.map(async l => { c[l.id] = (await getMarkers(l.id)).length }))
       setCounts(c)
       setNow(Date.now())
       setLoading(false)
@@ -34,41 +29,27 @@ export function AdminLevelsPage() {
 
   return (
     <div className="card card--pad">
-      <h2 className="h2" style={{ marginTop: 0 }}>
-        Level-Liste
-      </h2>
-      {loading && <div className="spinner" />}
-      {!loading && levels.length === 0 && <p className="muted">Keine Level vorhanden.</p>}
-      {!loading && levels.length > 0 && (
-        <div className="admin-table-wrap" style={{ marginTop: '1rem' }}>
-          <table className="table-lite">
-            <thead>
-              <tr>
-                <th>Titel</th>
-                <th>Status</th>
-                <th>Veröffentlichung</th>
-                <th>Froggys</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {levels.map((l) => (
-                <tr key={l.id}>
-                  <td>{l.title}</td>
-                  <td>{l.status === 'published' ? (l.publishAt && l.publishAt > now ? '🗓 Geplant' : '✅ Live') : '✏️ Entwurf'}</td>
-                  <td>{l.publishAt ? fmt(l.publishAt) : '—'}</td>
-                  <td>{counts[l.id] ?? l.frogCount}</td>
-                  <td>
-                    <Link to={`/admin/levels/${l.id}`} className="btn btn--ghost btn--sm">
-                      Bearbeiten
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <h2 className="h2" style={{ marginTop: 0 }}>Alle Level</h2>
+      {loading && <div className="loading-frog"><i aria-hidden className="froggy-head" />Lädt …</div>}
+      {!loading && levels.length === 0 && <p className="muted">Noch keine Level. <Link to="/admin/levels/new">Jetzt eins anlegen</Link></p>}
+      <ul className="studio-list">
+        {levels.map(l => {
+          const status = l.status === 'published' ? (l.publishAt && l.publishAt > now ? 'planned' : 'live') : 'draft'
+          return (
+            <li key={l.id}>
+              <Link to={`/admin/levels/${l.id}`} className="studio-item">
+                <span className="studio-item__pic">{l.imageUrl ? <img src={l.imageUrl} alt="" loading="lazy" /> : null}</span>
+                <span className="studio-item__body">
+                  <b>{l.title || 'Ohne Titel'}</b>
+                  <span className={`studio-badge studio-badge--${status}`}>{status === 'live' ? '● Live' : status === 'planned' ? '🗓 Geplant' : '✏️ Entwurf'}</span>
+                  <small>{l.publishAt ? fmt(l.publishAt) : 'Kein Termin'} · {counts[l.id] ?? l.frogCount} Froggys</small>
+                </span>
+                <span className="studio-item__go" aria-hidden>Bearbeiten ›</span>
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }

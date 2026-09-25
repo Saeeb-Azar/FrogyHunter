@@ -32,27 +32,27 @@ export function AdminLevelEditPage() {
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
   }, [dirty])
-  const locked = level?.status === 'published'
+  const live = level?.status === 'published'
   async function save(preview = false) {
     if (!id || !level || saving) return
+    if (preview && !dirty) { nav(`/admin/levels/${id}/preview`); return }
+    if (live && !confirm('Dieses Level ist live. Die Änderungen gelten sofort für alle Spieler. Speichern?')) return
     setSaving(true); setMsg(null)
     try {
       if (!title.trim()) throw new Error('Bitte einen Titel angeben.')
       if (!validateMarkers(markers)) throw new Error('Bitte 1 bis 50 gültige Fundstellen markieren.')
       const signature = await levelSignature(level.imageUrl, markers)
-      if (!locked) {
-        await saveMarkers(id, markers)
-        const patch = { title: title.trim(), frogCount: markers.length, publishAt: parseBerlinInput(publishAt), testedSignature: level.testedSignature === signature ? signature : null }
-        await updateLevel(id, patch)
-        setLevel({ ...level, ...patch })
-      }
-      setDirty(false); setMsg('Entwurf und Fundstellen gespeichert.')
+      await saveMarkers(id, markers)
+      const patch = { title: title.trim(), frogCount: markers.length, publishAt: parseBerlinInput(publishAt), testedSignature: level.testedSignature === signature ? signature : null }
+      await updateLevel(id, patch)
+      setLevel({ ...level, ...patch })
+      setDirty(false); setMsg(live ? 'Gespeichert – das Live-Level ist aktualisiert.' : 'Entwurf und Fundstellen gespeichert.')
       if (preview) nav(`/admin/levels/${id}/preview`)
     } catch (e) { setMsg(e instanceof Error ? e.message : 'Speichern fehlgeschlagen.') }
     finally { setSaving(false) }
   }
   async function publish() {
-    if (!id || !level || dirty || locked) return
+    if (!id || !level || dirty || live) return
     setSaving(true); setMsg(null)
     try {
       const [fresh, savedMarkers] = await Promise.all([getLevel(id), getMarkers(id)])
@@ -64,34 +64,56 @@ export function AdminLevelEditPage() {
     } catch (e) { setMsg(e instanceof Error ? e.message : 'Freigabe fehlgeschlagen.') }
     finally { setSaving(false) }
   }
+  async function unpublish() {
+    if (!id || !level || !live) return
+    if (!confirm('Level offline nehmen? Spieler sehen es dann nicht mehr, bis du es wieder veröffentlichst.')) return
+    setSaving(true); setMsg(null)
+    try {
+      await updateLevel(id, { status: 'draft' })
+      setLevel({ ...level, status: 'draft' })
+      setMsg('Offline genommen. Das Level ist wieder ein Entwurf.')
+    } catch (e) { setMsg(e instanceof Error ? e.message : 'Offline nehmen fehlgeschlagen.') }
+    finally { setSaving(false) }
+  }
   async function replaceImage(file: File) {
-    if (!id || locked) return
+    if (!id) return
     setSaving(true)
     try {
       const url = await uploadLevelImage(id, file)
       await saveMarkers(id, [])
       await updateLevel(id, { imageUrl: url, testedSignature: null, frogCount: 0 })
       setLevel(l => l ? { ...l, imageUrl: url, testedSignature: null, frogCount: 0 } : null)
-      setMarkers([]); setDirty(true); setMsg('Neues Bild gespeichert. Bitte die Froggys neu markieren.')
+      setMarkers([]); setDirty(true); setMsg('Neues Bild gespeichert. Bitte die Froggys neu markieren und speichern.')
     } catch (e) { setMsg(e instanceof Error ? e.message : 'Upload fehlgeschlagen.') }
     finally { setSaving(false) }
   }
-  if (loading) return <div className="spinner" />
-  if (!id || !level) return <p role="alert">{msg ?? 'Level nicht gefunden.'} <Link to="/admin/levels">Zur Übersicht</Link></p>
-  return <div>
-    <h2 className="h2">{level.title}</h2><p className="studio-help">{locked ? 'Freigegeben. Suchbild und Fundstellen sind gesperrt, damit bestehende Ergebnisse gültig bleiben.' : 'Klicke jeden versteckten Froggy an. Passe seinen Trefferbereich an und teste dein Level.'}</p>
+  if (loading) return <div className="loading-frog"><i aria-hidden className="froggy-head" />Level lädt …</div>
+  if (!id || !level) return <p role="alert" className="studio-status">{msg ?? 'Level nicht gefunden.'} <Link to="/admin/levels">Zur Übersicht</Link></p>
+  const scheduled = live && level.publishAt != null && level.publishAt > Date.now()
+  return <div className="studio-edit">
+    <div className="studio-edit__head">
+      <h2 className="h2">{level.title}</h2>
+      <span className={`studio-badge studio-badge--${live ? (scheduled ? 'planned' : 'live') : 'draft'}`}>{live ? (scheduled ? '🗓 Geplant' : '● Live') : '✏️ Entwurf'}</span>
+    </div>
+    <p className="studio-help">{live
+      ? 'Dieses Level ist freigegeben. Du kannst trotzdem alles ändern – Änderungen gelten sofort für alle Spieler. Tipp: danach einmal testen.'
+      : 'Tippe jeden versteckten Froggy im Bild an. Passe seinen Trefferbereich an und teste dein Level.'}</p>
     {msg && <p className="studio-status" role="status">{msg}</p>}
     <div className="card card--pad">
-      <div className="field"><label htmlFor="edit-title">Titel</label><input id="edit-title" className="input" value={title} maxLength={100} disabled={locked || saving} onChange={e => { setTitle(e.target.value); setDirty(true) }} /></div>
-      <div className="field"><label htmlFor="edit-date">Veröffentlichung · Europe/Berlin</label><input id="edit-date" className="input" type="datetime-local" value={publishAt} disabled={locked || saving} onChange={e => { setPublishAt(e.target.value); setDirty(true) }} /></div>
-      {!locked && <div className="field"><label htmlFor="replace-image">Suchbild ersetzen (setzt Fundstellen zurück)</label><input id="replace-image" type="file" accept="image/jpeg,image/png,image/webp" disabled={saving} onChange={e => { const file = e.target.files?.[0]; if (file && confirm('Bild ersetzen und alle bisherigen Fundstellen dieses Entwurfs entfernen?')) void replaceImage(file) }} /></div>}
+      <div className="field"><label htmlFor="edit-title">Titel</label><input id="edit-title" className="input" value={title} maxLength={100} disabled={saving} onChange={e => { setTitle(e.target.value); setDirty(true) }} /></div>
+      <div className="field"><label htmlFor="edit-date">Veröffentlichung · Europe/Berlin</label><input id="edit-date" className="input" type="datetime-local" value={publishAt} disabled={saving} onChange={e => { setPublishAt(e.target.value); setDirty(true) }} /></div>
+      <div className="field">
+        <span className="studio-label">Suchbild ersetzen (setzt Fundstellen zurück)</span>
+        <label className="studio-file"><input type="file" accept="image/jpeg,image/png,image/webp" disabled={saving} onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file && confirm(live ? 'Bild eines LIVE-Levels ersetzen? Alle Fundstellen werden entfernt und müssen neu gesetzt werden.' : 'Bild ersetzen und alle bisherigen Fundstellen entfernen?')) void replaceImage(file) }} /><span>📷 Neues Bild wählen</span></label>
+      </div>
     </div>
-    {level.imageUrl && <div inert={locked || saving}><MarkerEditor imageUrl={level.imageUrl} markers={markers} onChange={next => { setMarkers(next); setDirty(true) }} /></div>}
-    <div className="studio-toolbar">
-      {!locked && <button className="btn btn--ghost" disabled={saving} onClick={() => void save()}>Entwurf speichern</button>}
-      <button className="btn btn--primary" disabled={saving || !markers.length} onClick={() => void save(true)}>{locked ? 'Level testen' : 'Speichern & Level testen'}</button>
-      {!locked && <button className="btn btn--primary" disabled={saving || dirty || !level.testedSignature} onClick={() => void publish()}>{level.publishAt && level.publishAt > Date.now() ? 'Veröffentlichung planen' : 'Jetzt veröffentlichen'}</button>}
+    {level.imageUrl && <div inert={saving}><MarkerEditor imageUrl={level.imageUrl} markers={markers} onChange={next => { setMarkers(next); setDirty(true) }} /></div>}
+    <div className="studio-toolbar studio-toolbar--sticky">
+      <button className="btn btn--ghost" disabled={saving || !dirty} onClick={() => void save()}>{live ? 'Änderungen speichern' : 'Entwurf speichern'}</button>
+      <button className="btn btn--primary" disabled={saving || !markers.length} onClick={() => void save(true)}>{dirty ? 'Speichern & testen' : 'Level testen'}</button>
+      {!live && <button className="btn btn--primary" disabled={saving || dirty || !level.testedSignature} onClick={() => void publish()}>{level.publishAt && level.publishAt > Date.now() ? 'Veröffentlichung planen' : 'Jetzt veröffentlichen'}</button>}
     </div>
-    <p className="studio-help">{dirty ? 'Ungespeicherte Änderungen. Bitte speichern und erneut testen.' : level.testedSignature ? '✓ Spieltest bestanden.' : 'Die Freigabe wird nach einem vollständigen Spieltest aktiviert.'}</p>
+    <p className="studio-help">{dirty ? 'Ungespeicherte Änderungen.' : level.testedSignature ? '✓ Spieltest bestanden.' : live ? 'Seit der letzten Änderung noch nicht getestet.' : 'Die Freigabe wird nach einem vollständigen Spieltest aktiviert.'}</p>
+    {live && <div className="studio-toolbar"><button className="btn btn--danger" disabled={saving} onClick={() => void unpublish()}>Level offline nehmen</button></div>}
   </div>
 }
