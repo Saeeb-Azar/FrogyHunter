@@ -266,19 +266,17 @@ img { -webkit-user-drag: none; user-select: none; }
   position: absolute; left: 4%; right: 4%; top: 36%; bottom: 14%;
   display: flex; align-items: center; justify-content: space-evenly; gap: 1%;
 }
-.fslot { position: relative; height: 92%; aspect-ratio: 180 / 197; max-width: calc(92% / var(--n)); flex: 0 1 auto; }
-.fslot img { display: none; }
-.fslot::before { content: ''; position: absolute; inset: 0; mask: var(--a-leer-froggy) center / contain no-repeat; -webkit-mask: var(--a-leer-froggy) center / contain no-repeat; background: linear-gradient(#3b200e, #56300f); opacity: .8; transition: opacity .3s; }
-/* Gefunden: gemalter Froggy-Kopf aus froggy_anzahl.png guckt aus seinem Platz */
+/* Leer = braune Kopf-Silhouette, gefunden = gemalter Froggy-Kopf – exakt gleiche Form & Größe */
+.fslot { position: relative; flex: none; width: min(calc(94% / var(--per-row)), 30%); max-height: 100%; aspect-ratio: 220 / 97; }
+.fslot::before { content: ''; position: absolute; inset: 0; background: var(--a-froggy-empty) center / contain no-repeat; opacity: .85; transition: opacity .25s; }
 .fslot > i {
-  position: absolute; left: 50%; bottom: 6%; width: 135%; aspect-ratio: 220 / 97; z-index: 1;
-  background: var(--a-froggy-found) center / contain no-repeat;
-  transform: translateX(-50%) translateY(30%) scale(0); transform-origin: 50% 100%;
-  transition: transform .45s cubic-bezier(.3, 1.8, .5, 1);
-  filter: drop-shadow(0 2px 2px #0008);
+  position: absolute; inset: 0; z-index: 1; background: var(--a-froggy-found) center / contain no-repeat;
+  transform: scale(0); transform-origin: 50% 100%; transition: transform .45s cubic-bezier(.3, 1.8, .5, 1);
 }
-.fslot.is-found::before { opacity: .25; }
-.fslot.is-found > i { transform: translateX(-50%) translateY(0) scale(1); }
+.fslot.is-found::before { opacity: 0; }
+.fslot.is-found > i { transform: scale(1); }
+.frog-plank__slots.is-two-rows { flex-wrap: wrap; align-content: center; row-gap: 4%; }
+.frog-plank__slots.is-two-rows .fslot { max-height: 48%; }
 .fslot.is-new { animation: slot-pop .7s ease; }
 @keyframes slot-pop { 0% { transform: scale(1); } 40% { transform: scale(1.45) rotate(-8deg); } 100% { transform: scale(1); } }
 

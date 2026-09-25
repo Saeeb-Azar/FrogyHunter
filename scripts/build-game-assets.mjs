@@ -51,6 +51,13 @@ for (const [src, name, width] of UI) {
   }
   const out = await sharp(data, { raw: info }).trim({ threshold: 2 }).resize({ width: 220 }).webp({ quality: 90, alphaQuality: 95 }).toFile(`${OUT}/froggy-found.webp`)
   console.log('froggy-found.webp', `${out.width}x${out.height}`)
+  // Leerer Platz: dieselbe Kopf-Form als braune Silhouette (passend zu leer_froggy.png)
+  const alpha = await sharp(`${OUT}/froggy-found.webp`).ensureAlpha().extractChannel(3).toBuffer()
+  const { width: ew, height: eh } = await sharp(`${OUT}/froggy-found.webp`).metadata()
+  const shade = Buffer.from(`<svg width="${ew}" height="${eh}"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5e3818"/><stop offset="1" stop-color="#3b200e"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>`)
+  const base = await sharp(shade).removeAlpha().toBuffer()
+  await sharp(base).joinChannel(alpha).webp({ quality: 90, alphaQuality: 95 }).toFile(`${OUT}/froggy-empty.webp`)
+  console.log('froggy-empty.webp')
 }
 
 // Pergament-Tafel (RGB mit dunklem Rand → Schwellwert-Zuschnitt, als 9-Slice-Panel genutzt)
