@@ -35,7 +35,7 @@ export function PlayPage() {
     return () => { active = false }
   }, [user, levelId])
   return <GameStage scene="play" wide className="stage--play">
-    {loading ? <div className="loading-frog" aria-label="Level lädt"><i aria-hidden>🐸</i>Level wird geladen …</div>
+    {loading ? <div className="loading-frog" aria-label="Level lädt"><i aria-hidden className="froggy-head" />Level wird geladen …</div>
       : error || !level ? <div className="wood-panel lobby-notice"><div className="wood-panel__inner"><p>{error ?? 'Das nächste Level erscheint bald.'}</p><StoneButton to="/" size="sm">Zur Lobby</StoneButton></div></div>
       : user && <PlayView key={level.id} level={level} markers={markers} uid={user.uid} levelNumber={levelNumber} />}
   </GameStage>

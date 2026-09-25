@@ -44,7 +44,7 @@ export const Froggy3D = forwardRef<Froggy3DHandle, Props>(function Froggy3D({ va
   }, [variant, reduceMotion])
 
   return (
-    <div ref={container} className={`froggy3d${className ? ` ${className}` : ''}`}>
+    <div ref={container} className={`froggy3d${ready ? ' is-ready' : ''}${className ? ` ${className}` : ''}`}>
       {!ready && fallback}
     </div>
   )

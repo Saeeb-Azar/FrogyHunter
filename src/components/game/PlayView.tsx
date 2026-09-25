@@ -266,7 +266,7 @@ export function PlayView({ level, markers, uid, levelNumber, testMode, onExitTes
   }
 
   if (loadError) return <div className="play-screen"><div role="alert" className="wood-panel lobby-notice"><div className="wood-panel__inner"><p>Dein Spielstand konnte nicht geladen werden.</p><StoneButton size="sm" onClick={() => location.reload()}>Erneut laden</StoneButton></div></div></div>
-  if (!initialized) return <div className="loading-frog" aria-label="Spielstand laden"><i aria-hidden>🐸</i>Spielstand wird geladen …</div>
+  if (!initialized) return <div className="loading-frog" aria-label="Spielstand laden"><i aria-hidden className="froggy-head" />Spielstand wird geladen …</div>
   if (!validateMarkers(markers)) return <div className="play-screen"><div className="wood-panel lobby-notice" role="alert"><div className="wood-panel__inner"><p>Dieses Level ist noch nicht spielbereit. Bitte die Fundstellen im Editor prüfen.</p></div></div></div>
 
   const foundCount = run.foundFroggys.length

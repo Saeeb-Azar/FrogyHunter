@@ -43,7 +43,7 @@ export function VictoryOverlay({ title, durationMs, clicks, misses, hintsUsed, s
     <div className="victory" role="dialog" aria-modal="true" aria-label="Alle Froggys gefunden">
       <div className="victory__rays" aria-hidden />
       <Confetti />
-      <div className="victory__frog"><Froggy3D variant="party" fallback={<span className="froggy-fallback" aria-hidden>🐸</span>} /></div>
+      <div className="victory__frog"><Froggy3D variant="party" /></div>
       <div className="victory__box wood-panel">
         <div className="wood-panel__inner">
           <div className="game-title victory__title">GESCHAFFT!</div>

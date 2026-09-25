@@ -6,7 +6,7 @@ export function ProtectedLayout() {
   const { user, loading } = useAuth()
 
   if (loading) {
-    return <GameStage scene="lobby"><div className="loading-frog"><i aria-hidden>🐸</i>Froggy Hunt lädt …</div></GameStage>
+    return <GameStage scene="lobby"><div className="loading-frog"><i aria-hidden className="froggy-head" />Froggy Hunt lädt …</div></GameStage>
   }
 
   if (!user) {

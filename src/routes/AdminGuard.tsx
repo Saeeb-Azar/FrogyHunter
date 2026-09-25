@@ -20,7 +20,7 @@ export function AdminGuard() {
 
   if (!loading && !user) return <Navigate to="/login" replace />
   if (loading || !user || result?.uid !== user.uid) {
-    return <GameStage scene="forest"><div className="loading-frog"><i aria-hidden>🐸</i>Level Studio lädt …</div></GameStage>
+    return <GameStage scene="forest"><div className="loading-frog"><i aria-hidden className="froggy-head" />Level Studio lädt …</div></GameStage>
   }
   if (!result.ok) return <Navigate to="/" replace />
   return <Outlet />

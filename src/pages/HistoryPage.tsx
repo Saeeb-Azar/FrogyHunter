@@ -169,10 +169,10 @@ export function HistoryPage() {
       <div className="map-screen">
         <ScreenHeader title="LEVEL-KARTE" />
         {!loading && !error && <div className="map-summary">
-          <span className="map-chip">🐸 {completedCount}/{n} Level</span>
+          <span className="map-chip"><i className="froggy-head froggy-head--inline" aria-hidden /> {completedCount}/{n} Level</span>
           <span className="map-chip"><StarIcon on /> {starTotal}/{n * 3}</span>
         </div>}
-        {loading && <div className="loading-frog"><i aria-hidden>🐸</i>Karte wird geladen …</div>}
+        {loading && <div className="loading-frog"><i aria-hidden className="froggy-head" />Karte wird geladen …</div>}
         {error && <div className="wood-panel lobby-notice" role="alert"><div className="wood-panel__inner"><p>Deine Karte konnte nicht geladen werden.</p><button className="text-link" onClick={() => location.reload()}>Erneut versuchen</button></div></div>}
         {!loading && !error && <div className="map-scroll" ref={scroller}>
           <div className="map-world" style={{ height }}>
@@ -214,7 +214,7 @@ export function HistoryPage() {
             </div>
 
             {token && <div className="map-token" style={{ left: token.x, top: token.y }}>
-              <Froggy3D ref={frog} variant="token" fallback={<span className="froggy-fallback" aria-hidden>🐸</span>} />
+              <Froggy3D ref={frog} variant="token" />
             </div>}
           </div>
         </div>}

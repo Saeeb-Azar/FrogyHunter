@@ -80,7 +80,7 @@ export function LobbyPage() {
           <span className="lobby-logo__tag">FINDE SIE ALLE!</span>
         </div>
 
-        {loading ? <div className="lobby-notice wood-panel"><div className="loading-frog"><i aria-hidden>🐸</i>Dein Abenteuer lädt …</div></div>
+        {loading ? <div className="lobby-notice wood-panel"><div className="loading-frog"><i aria-hidden className="froggy-head" />Dein Abenteuer lädt …</div></div>
           : error ? <div className="lobby-notice wood-panel" role="alert"><p>Die Level konnten nicht geladen werden.</p><StoneButton size="sm" onClick={() => location.reload()}>Erneut versuchen</StoneButton></div>
           : level ? <>
             <Link to="/play" className="lvl-card" aria-label={`Aktuelles Level: ${level.title}, ${level.frogCount} versteckte Froggys`}>
@@ -90,9 +90,9 @@ export function LobbyPage() {
               <span className="lvl-card__plank lvl-card__plank--1">
                 {progress?.completed
                   ? <><Stars count={stars} className="lvl-card__stars" /> Bestzeit {formatTime(progress.bestDurationMs ?? progress.durationMs ?? 0)}</>
-                  : <>🐸 {level.frogCount} versteckte Froggys</>}
+                  : <><i className="froggy-head froggy-head--inline" aria-hidden /> {level.frogCount} versteckte Froggys</>}
               </span>
-              <span className="lvl-card__plank lvl-card__plank--2">Neues Level in&nbsp;<NewLevelCountdown /></span>
+              <span className="lvl-card__plank lvl-card__plank--2">Neu in&nbsp;<NewLevelCountdown /></span>
               {progress?.completed && <span className="lvl-card__badge">GE-<br />SCHAFFT</span>}
               {!progress && <span className="lvl-card__new">NEU!</span>}
             </Link>
@@ -106,7 +106,7 @@ export function LobbyPage() {
         </nav>
 
         <div className="lobby-frog">
-          <Froggy3D ref={frog} variant="hero" fallback={<span className="froggy-fallback" aria-hidden>🐸</span>} />
+          <Froggy3D ref={frog} variant="hero" />
           <button type="button" className="lobby-frog__tap" onClick={poke} aria-label="Froggy anstupsen" />
           <span key={greet} className="lobby-frog__bubble" aria-hidden>{GREETINGS[greet % GREETINGS.length]}</span>
         </div>

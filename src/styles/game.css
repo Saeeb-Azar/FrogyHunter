@@ -62,7 +62,7 @@ img { -webkit-user-drag: none; user-select: none; }
   position: relative; z-index: 1; height: 100%;
   overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
   padding: max(12px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
-  scrollbar-width: none;
+  scrollbar-width: none; container-type: size;
 }
 .stage-content::-webkit-scrollbar { display: none; }
 
@@ -285,12 +285,13 @@ img { -webkit-user-drag: none; user-select: none; }
 /* ==========================================================================
    LOBBY
    ========================================================================== */
-.lobby { position: relative; min-height: 100%; display: flex; flex-direction: column; align-items: center; padding-bottom: 21dvh; }
+.lobby { position: relative; height: 100%; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding-bottom: 20cqh; box-sizing: border-box; }
+.stage-content:has(> .lobby) { overflow: hidden; }
 .lobby-top { width: 100%; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .lobby-audio { display: flex; gap: 8px; padding-top: 4px; }
 
 .profile-panel {
-  position: relative; display: block; width: min(62%, 250px, 27dvh); aspect-ratio: 900 / 441; flex: none;
+  position: relative; display: block; width: min(62cqw, 250px, 26cqh); aspect-ratio: 900 / 441; flex: none;
   color: var(--g-cream); text-decoration: none; filter: drop-shadow(0 6px 8px #0008);
 }
 .profile-panel > img { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -298,17 +299,17 @@ img { -webkit-user-drag: none; user-select: none; }
 .profile-panel__avatar img { width: 100%; height: 100%; object-fit: cover; }
 .profile-panel__avatar svg { width: 86%; height: 86%; }
 .profile-panel__text { position: absolute; left: 38%; right: 6%; top: 12%; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.profile-panel__name { font: 400 clamp(13px, 3.8vw, 16px)/1.1 var(--g-display); letter-spacing: .02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.profile-panel__lvl { font: 800 clamp(10px, 3vw, 12px)/1.2 var(--g-font); color: var(--g-gold); }
+.profile-panel__name { font: 400 min(3.8cqw, 1.9cqh, 16px)/1.1 var(--g-display); letter-spacing: .02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-panel__lvl { font: 800 min(3cqw, 1.5cqh, 12px)/1.2 var(--g-font); color: var(--g-gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .profile-panel__xp { position: relative; width: 70%; height: 11px; margin-top: 3px; border-radius: 6px; background: #1a0f06; border: 2px solid #0a0502; overflow: hidden; }
 .profile-panel__xp > i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: linear-gradient(#b8f06a, #4fa51f); box-shadow: inset 0 2px 0 #fff6; transition: width .8s ease; }
 .profile-panel__xp > b { position: absolute; inset: 0; font: 800 8px/7px var(--g-font); text-align: center; color: #fff; }
 
-.lobby-logo { margin: .6dvh 0 0; text-align: center; animation: logo-bob 4s ease-in-out infinite; }
-.lobby-logo .game-title { display: block; font-size: min(12.5vw, 6.4dvh, 58px); white-space: nowrap; }
+.lobby-logo { margin: .4cqh 0 0; flex: none; text-align: center; animation: logo-bob 4s ease-in-out infinite; }
+.lobby-logo .game-title { display: block; font-size: min(12.5cqw, 6cqh, 58px); white-space: nowrap; }
 .game-title--green { background-image: linear-gradient(#f4ffc0 5%, #b8f06a 40%, #5fb82a 70%, #2f7a16 100%); }
 .lobby-logo__tag {
-  display: inline-block; margin-top: 4px; padding: 3px 16px 4px; border-radius: 10px;
+  display: inline-block; margin-top: .4cqh; padding: 3px 16px 4px; border-radius: 10px; font-size: min(3.8cqw, 2.1cqh, 14px) !important;
   background: linear-gradient(#c7864a, #8d5424); border: 2px solid #3a1d07; box-shadow: 0 3px 0 #3a1d07, 0 6px 10px #0006;
   font: 400 14px/1.2 var(--g-display); letter-spacing: .12em; color: var(--g-cream); text-shadow: 0 1px 0 #3a1d07;
   transform: rotate(-2deg);
@@ -317,7 +318,7 @@ img { -webkit-user-drag: none; user-select: none; }
 
 /* Level-Karte (lvl-show.png) */
 .lvl-card {
-  position: relative; display: block; width: min(84%, 350px, 36dvh); aspect-ratio: 900 / 623; margin: 1.2dvh auto 0;
+  position: relative; display: block; width: min(84cqw, 350px, 33cqh); aspect-ratio: 900 / 623; margin: 1cqh auto 0; flex: none;
   color: var(--g-cream); text-decoration: none; filter: drop-shadow(0 12px 16px #000a);
   animation: card-in .7s cubic-bezier(.2, 1.4, .4, 1) both;
 }
@@ -327,12 +328,12 @@ img { -webkit-user-drag: none; user-select: none; }
 .lvl-card__window::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 14px 4px #1c0d04cc; background: linear-gradient(#0000 55%, #1c0d04e0); }
 .lvl-card__title {
   position: absolute; z-index: 4; left: 11%; right: 11%; top: 52%; text-align: center;
-  font: 400 clamp(15px, 4.6vw, 19px)/1.05 var(--g-display); letter-spacing: .02em;
+  font: 400 min(4.8cqw, 2.4cqh, 19px)/1.05 var(--g-display); letter-spacing: .02em;
   text-shadow: 0 2px 0 #1c0d04, 0 0 8px #000c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .lvl-card__plank {
   position: absolute; z-index: 3; left: 14%; right: 14%; display: flex; align-items: center; justify-content: center; gap: 6px;
-  font: 800 clamp(11px, 3.4vw, 14px)/1 var(--g-font); color: var(--g-gold); text-shadow: 0 1px 0 #1c0d04; white-space: nowrap;
+  font: 800 min(3.5cqw, 1.8cqh, 14px)/1 var(--g-font); color: var(--g-gold); text-shadow: 0 1px 0 #1c0d04; white-space: nowrap; overflow: hidden;
 }
 .lvl-card__plank--1 { top: 67.3%; height: 8.8%; }
 .lvl-card__plank--2 { top: 78.5%; height: 9.6%; color: var(--g-cream); }
@@ -350,13 +351,13 @@ img { -webkit-user-drag: none; user-select: none; }
 .star { width: 1.1em; height: 1.1em; fill: #6d4a2a; stroke: #2a1606; stroke-width: 1.5; }
 .star.is-on { fill: var(--g-gold); filter: drop-shadow(0 0 3px #ffd23f99); }
 
-.lobby-play { width: 100%; margin: 1.6dvh 0 0; }
-.lobby-play .play-asset { width: min(72%, 330px, 35dvh); }
+.lobby-play { width: 100%; margin: 1.4cqh 0 0; flex: none; }
+.lobby-play .play-asset { width: min(72cqw, 330px, 31cqh); }
 
 /* Menü-Buttons */
-.lobby-menu { display: flex; justify-content: center; gap: 4%; width: 100%; margin-top: 1.4dvh; }
+.lobby-menu { display: flex; justify-content: center; gap: 4%; width: 100%; margin-top: 1.2cqh; flex: none; }
 .menu-btn {
-  position: relative; width: min(26%, 110px, 12.2dvh); display: block; text-decoration: none; isolation: isolate;
+  position: relative; width: min(26cqw, 110px, 11cqh); display: block; text-decoration: none; isolation: isolate;
   animation: menu-in .6s cubic-bezier(.2, 1.5, .4, 1) both;
   transition: transform .15s;
 }
@@ -372,7 +373,7 @@ img { -webkit-user-drag: none; user-select: none; }
 @keyframes menu-shadow { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.8); opacity: .6; } }
 
 /* 3D-Froggy auf dem Steg */
-.lobby-frog { position: absolute; left: 50%; bottom: -1dvh; transform: translateX(-50%); width: min(96%, 420px); height: 27dvh; z-index: 1; }
+.lobby-frog { position: absolute; left: 50%; bottom: -1cqh; transform: translateX(-50%); width: min(96cqw, 420px); height: 25cqh; z-index: 1; }
 .lobby-menu, .lobby-play, .lvl-card { position: relative; z-index: 2; }
 .lobby-frog .froggy3d { width: 100%; height: 100%; }
 .lobby-frog__tap { position: absolute; left: 25%; right: 25%; top: 25%; bottom: 8%; border: 0; background: none; cursor: pointer; border-radius: 50%; }
@@ -682,7 +683,7 @@ img { -webkit-user-drag: none; user-select: none; }
 .demo-pill { display: inline-block; margin-bottom: 10px; padding: 2px 12px; border-radius: 10px; background: #ffd23f; color: #5b2f06; font: 400 13px var(--g-display); border: 2px solid #6b3b06; }
 
 .loading-frog { display: grid; place-items: center; height: 100%; gap: 10px; font: 400 18px var(--g-display); color: var(--g-cream); text-shadow: 0 2px 0 #1c0d04; }
-.loading-frog i { font-style: normal; font-size: 56px; animation: hop 0.9s ease-in-out infinite; display: inline-block; }
+.loading-frog i { animation: hop 0.9s ease-in-out infinite; }
 @keyframes hop { 0%, 100% { transform: translateY(0) scaleY(1); } 15% { transform: translateY(0) scaleY(.85); } 50% { transform: translateY(-26px) scaleY(1.08); } }
 
 /* ==========================================================================
@@ -793,3 +794,10 @@ img { -webkit-user-drag: none; user-select: none; }
   animation: new-wobble 2.4s ease-in-out infinite;
 }
 @keyframes new-wobble { 0%, 100% { transform: rotate(-12deg) scale(1); } 50% { transform: rotate(-6deg) scale(1.1); } }
+
+/* Gemalter Froggy-Kopf statt Emoji */
+.froggy-head { display: inline-block; width: 96px; aspect-ratio: 220 / 97; background: var(--a-froggy-found) center / contain no-repeat; filter: drop-shadow(0 4px 4px #0008); font-style: normal; }
+.froggy-head--inline { width: 2.1em; vertical-align: -0.25em; filter: none; animation: none !important; }
+/* 3D-Froggy blendet sich ein, sobald WebGL bereit ist – kein Platzhalter-Emoji */
+.froggy3d canvas { opacity: 0; transition: opacity .5s ease; }
+.froggy3d.is-ready canvas { opacity: 1; }

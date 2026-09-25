@@ -73,14 +73,14 @@ function skinTextures() {
   const c = document.createElement('canvas'); c.width = W; c.height = H
   const g = c.getContext('2d')!
   const grad = g.createLinearGradient(0, 0, 0, H)
-  grad.addColorStop(0, '#2f6a17'); grad.addColorStop(0.35, '#4a8f22'); grad.addColorStop(0.62, '#6aa92e'); grad.addColorStop(1, '#a9c95a')
+  grad.addColorStop(0, '#3f8a1f'); grad.addColorStop(0.35, '#58a42a'); grad.addColorStop(0.62, '#78bb38'); grad.addColorStop(1, '#bcd86c')
   g.fillStyle = grad; g.fillRect(0, 0, W, H)
   const r = seeded(7)
   g.globalCompositeOperation = 'multiply'
-  for (let i = 0; i < 38; i++) {
+  for (let i = 0; i < 18; i++) {
     const x = r() * W, y = r() * H * 0.62, rad = 6 + r() * 16
     const sp = g.createRadialGradient(x, y, 0, x, y, rad)
-    sp.addColorStop(0, 'rgba(40,80,20,0.85)'); sp.addColorStop(0.7, 'rgba(50,95,25,0.4)'); sp.addColorStop(1, 'rgba(60,110,30,0)')
+    sp.addColorStop(0, 'rgba(60,110,30,0.45)'); sp.addColorStop(0.7, 'rgba(70,120,35,0.2)'); sp.addColorStop(1, 'rgba(60,110,30,0)')
     g.fillStyle = sp; g.beginPath(); g.ellipse(x, y, rad * 1.3, rad, r() * 3, 0, Math.PI * 2); g.fill()
   }
   g.globalCompositeOperation = 'source-over'
@@ -108,18 +108,14 @@ function irisTexture() {
   const c = document.createElement('canvas'); c.width = c.height = S
   const g = c.getContext('2d')!
   const m = S / 2
-  const base = g.createRadialGradient(m, m, 10, m, m, m)
-  base.addColorStop(0, '#f7d56a'); base.addColorStop(0.55, '#d99a2b'); base.addColorStop(0.86, '#8a5212'); base.addColorStop(1, '#2a1606')
+  // Süße Kulleraugen: warmes Haselnussbraun, riesige runde Pupille, große Lichtpunkte
+  const base = g.createRadialGradient(m, m, 20, m, m, m)
+  base.addColorStop(0, '#9a6a2a'); base.addColorStop(0.7, '#6b4418'); base.addColorStop(0.93, '#3a2410'); base.addColorStop(1, '#241408')
   g.fillStyle = base; g.beginPath(); g.arc(m, m, m, 0, Math.PI * 2); g.fill()
-  const r = seeded(3)
-  for (let i = 0; i < 140; i++) {
-    const a = r() * Math.PI * 2, r0 = 30 + r() * 20, r1 = 90 + r() * 30
-    g.strokeStyle = r() > 0.5 ? 'rgba(255,235,150,0.35)' : 'rgba(90,50,10,0.35)'; g.lineWidth = 1 + r() * 1.5
-    g.beginPath(); g.moveTo(m + Math.cos(a) * r0, m + Math.sin(a) * r0); g.lineTo(m + Math.cos(a) * r1, m + Math.sin(a) * r1); g.stroke()
-  }
-  g.fillStyle = '#0a0806'; g.beginPath(); g.ellipse(m, m, 72, 34, 0, 0, Math.PI * 2); g.fill()
-  g.fillStyle = 'rgba(255,255,255,0.95)'; g.beginPath(); g.ellipse(m - 40, m - 44, 22, 17, -0.4, 0, Math.PI * 2); g.fill()
-  g.fillStyle = 'rgba(255,255,255,0.7)'; g.beginPath(); g.arc(m + 38, m + 30, 9, 0, Math.PI * 2); g.fill()
+  g.fillStyle = '#0d0907'; g.beginPath(); g.arc(m, m + 4, m * 0.7, 0, Math.PI * 2); g.fill()
+  g.fillStyle = 'rgba(255,255,255,0.97)'; g.beginPath(); g.ellipse(m - 34, m - 36, 30, 26, -0.5, 0, Math.PI * 2); g.fill()
+  g.fillStyle = 'rgba(255,255,255,0.9)'; g.beginPath(); g.arc(m + 30, m + 34, 12, 0, Math.PI * 2); g.fill()
+  g.fillStyle = 'rgba(255,255,255,0.55)'; g.beginPath(); g.arc(m + 44, m - 14, 6, 0, Math.PI * 2); g.fill()
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace
   return t
 }
@@ -261,7 +257,13 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
   head.position.set(0, 1.25, 0.12)
   body.add(head)
   mesh(head, green, [0, 0, 0], [0.94, 0.58, 0.68])
-  mesh(head, lightGreen, [0, -0.12, 0.45], [0.74, 0.29, 0.25])
+  // Unterkiefer (klappt zum Fliegenfangen auf) + Mundinnenraum
+  const jaw = new THREE.Group()
+  jaw.position.set(0, -0.1, 0.12)
+  head.add(jaw)
+  mesh(jaw, lightGreen, [0, -0.02, 0.33], [0.74, 0.29, 0.25])
+  const mouthInside = mesh(head, std(0x8a2a3a, 0.6), [0, -0.2, 0.5], [0.5, 0.1, 0.16])
+  mouthInside.visible = false
   const pupils: THREE.Mesh[] = []
   const hips: THREE.Group[] = []
   const shins: THREE.Group[] = []
@@ -270,14 +272,20 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
   const irisMat = new THREE.MeshBasicMaterial({ map: irisTex, transparent: true })
   mats.push(irisMat)
   const irisGeo = new THREE.CircleGeometry(1, 40)
+  const blushMat = new THREE.MeshBasicMaterial({ color: 0xff9a9a, transparent: true, opacity: 0.55, depthWrite: false })
+  mats.push(blushMat)
   const lids: THREE.Mesh[] = []
   for (const side of [-1, 1]) {
-    mesh(head, green, [side * 0.48, 0.42, 0.07], [0.38, 0.45, 0.35])
-    mesh(head, std(0xf3e6c2, 0.25), [side * 0.48, 0.47, 0.3], [0.28, 0.32, 0.18])
-    const irisDisc = mesh(head, irisMat, [side * 0.48, 0.49, 0.484], [0.25, 0.29, 1], irisGeo)
-    irisDisc.userData.base = 0.29
+    mesh(head, green, [side * 0.47, 0.44, 0.07], [0.41, 0.47, 0.37])
+    mesh(head, std(0xfffcf2, 0.2), [side * 0.47, 0.49, 0.3], [0.31, 0.35, 0.2])
+    const irisDisc = mesh(head, irisMat, [side * 0.47, 0.49, 0.504], [0.24, 0.26, 1], irisGeo)
+    // rosa Bäckchen, flach auf der Wange
+    const blush = mesh(head, blushMat, [side * 0.6, -0.1, 0.53], [0.13, 0.075, 0.02])
+    blush.rotation.y = side * 0.75
+    irisDisc.userData.base = 0.26
+    irisDisc.userData.home = irisDisc.position.clone()
     pupils.push(irisDisc)
-    const lid = mesh(head, green, [side * 0.48, 0.5, 0.33], [0.3, 0.001, 0.2])
+    const lid = mesh(head, green, [side * 0.47, 0.52, 0.34], [0.33, 0.001, 0.22])
     lids.push(lid)
     mesh(head, darkGreen, [side * 0.15, 0.03, 0.66], [0.03, 0.02, 0.012])
     // Beine, Arme, Füße
@@ -323,7 +331,7 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
     fly = new THREE.Group()
     const flyBody = phys(0x3d6a8c, { roughness: 0.3, metalness: 0.35, clearcoat: 1, iridescence: 0.6 })
     const flyStripe = phys(0xffc93c, { roughness: 0.35 })
-    const flyEye = phys(0xc0301f, { clearcoat: 1, clearcoatRoughness: 0.1, roughness: 0.2 })
+    const flyEye = phys(0x2a1a14, { clearcoat: 1, clearcoatRoughness: 0.05, roughness: 0.15 })
     mesh(fly, flyBody, [0, 0, -0.1], [0.13, 0.12, 0.2])
     mesh(fly, flyStripe, [0, 0.005, -0.12], [0.135, 0.125, 0.04])
     mesh(fly, flyStripe, [0, 0.005, -0.2], [0.11, 0.1, 0.035])
@@ -340,7 +348,7 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
       wing.userData.side = side
       wings.push(pivot)
     }
-    fly.scale.setScalar(2.1)
+    fly.scale.setScalar(1.45)
     scene.add(fly)
     const glow = glowTexture()
     textures.push(glow)
@@ -375,9 +383,10 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
   let action: Action | null = null, actionStart = 0, nextAction = 2.5, lookDir = 1, croakBoost = 0
   const startHop = (dur: number, height: number, spinAmount = 0) => { hopStart = time; hopDur = dur; hopHeight = height; hopSpin = spinAmount }
   let facing = 0, facingTarget = 0
-  let tongueStart = -10, nextTongue = 5, lookOffset = 0
+  let tongueStart = -10, nextTongue = 5, lookOffset = 0, pointerAt = -10
   const pointer = new THREE.Vector2()
   const pointerMove = (e: PointerEvent) => {
+    pointerAt = time
     const r = container.getBoundingClientRect()
     pointer.set(((e.clientX - r.left) / Math.max(r.width, 1) - 0.5) * 2, ((e.clientY - r.top) / Math.max(r.height, 1) - 0.5) * 2)
   }
@@ -411,9 +420,18 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
       throat.scale.set(0.3 + puff * 0.2, 0.2 + puff * 0.17, 0.16 + puff * 0.2)
 
       // Kopf folgt Finger/Maus
-      const lookX = variant === 'hero' && fly && time - tongueStart > 0.6 ? pointer.x * 0.5 + (flyPos.x / 3) * 0.5 : pointer.x
-      head.rotation.y += (lookX * 0.2 + lookOffset - head.rotation.y) * Math.min(dt * 5, 1)
-      head.rotation.x += (pointer.y * 0.1 - head.rotation.x) * Math.min(dt * 5, 1)
+      // Jagdblick: Kopf und Augen verfolgen die Fliege (Finger/Maus hat kurz Vorrang)
+      const hunting = variant === 'hero' && fly?.visible && time - pointerAt > 2
+      const yawT = hunting ? Math.max(-0.5, Math.min(0.5, Math.atan2(flyPos.x, flyPos.z + 1.2) * 0.6)) : pointer.x * 0.2
+      const pitchT = hunting ? -Math.atan2(flyPos.y - 2.0, 3) * 0.5 : pointer.y * 0.1
+      head.rotation.y += (yawT + (hunting ? lookOffset * 0.3 : lookOffset) - head.rotation.y) * Math.min(dt * 6, 1)
+      head.rotation.x += (pitchT - head.rotation.x) * Math.min(dt * 6, 1)
+      if (fly) {
+        const local = head.worldToLocal(flyPos.clone())
+        const ex = hunting ? Math.max(-1, Math.min(1, local.x / 2.2)) : pointer.x * 0.6
+        const ey = hunting ? Math.max(-1, Math.min(1, (local.y - 0.5) / 1.6)) : -pointer.y * 0.5
+        pupils.forEach(p => { const h = p.userData.home as THREE.Vector3; p.position.set(h.x + ex * 0.07, h.y + ey * 0.06, h.z) })
+      }
 
       // Blinzeln
       const blinkPhase = time % 4.3
@@ -501,9 +519,13 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
       if (fly && flyHalo) {
         const ft = time * 0.62
         flyPrev.copy(flyPos)
-        flyPos.set(Math.sin(ft) * 2.3, 2.0 + Math.sin(ft * 2) * 0.35 + Math.sin(time * 9) * 0.04, 1.1 + Math.cos(ft) * 0.55)
+        flyPos.set(Math.sin(ft) * 3.1, 2.3 + Math.sin(ft * 2) * 0.45 + Math.sin(time * 9) * 0.05, 1.3 + Math.cos(ft) * 1.0)
         const te = time - tongueStart
         if (time > nextTongue && te > 2) { tongueStart = time; nextTongue = time + 7 + Math.random() * 5 }
+        const open = te < 0.1 ? te / 0.1 : te < 0.45 ? 1 : te < 0.6 ? 1 - (te - 0.45) / 0.15 : 0
+        jaw.rotation.x = open * 0.5
+        mouthInside.visible = open > 0.02
+        mouthInside.scale.y = 0.02 + open * 0.14
         if (te < 0.5) {
           const dist = head.worldToLocal(flyPos.clone()).sub(tongue.position).length()
           const len = Math.max(0.001, dist * Math.sin(Math.min(te / 0.5, 1) * Math.PI))
@@ -515,7 +537,7 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
         } else {
           tongue.visible = false
           fly.visible = te > 1.4
-          fly.scale.setScalar(te > 1.4 && te < 1.8 ? 2.1 * (te - 1.4) / 0.4 : 2.1)
+          fly.scale.setScalar(te > 1.4 && te < 1.8 ? 1.45 * (te - 1.4) / 0.4 : 1.45)
         }
         fly.position.copy(flyPos)
         if (flyPos.distanceToSquared(flyPrev) > 1e-6) fly.lookAt(flyPos.clone().add(flyPos.clone().sub(flyPrev)))

@@ -8,7 +8,7 @@ import { StoneButton } from '../components/game-ui/PlayButtons'
 export function LoginPage() {
   const { user, loading, demoMode, signInWithGoogle, signInDemo } = useAuth()
   const [err, setErr] = useState<string | null>(null)
-  if (loading) return <GameStage scene="lobby"><div className="loading-frog"><i aria-hidden>🐸</i>Einen Moment …</div></GameStage>
+  if (loading) return <GameStage scene="lobby"><div className="loading-frog"><i aria-hidden className="froggy-head" />Einen Moment …</div></GameStage>
   if (user) return <Navigate to="/" replace />
   return (
     <GameStage scene="lobby">
@@ -17,7 +17,7 @@ export function LoginPage() {
           <span className="game-title" style={{ fontSize: 'min(13vw, 60px)' }}>FROGGY <span className="game-title game-title--green">HUNT</span></span>
           <span className="lobby-logo__tag">FINDE SIE ALLE!</span>
         </div>
-        <div className="login-frog"><Froggy3D variant="hero" fallback={<span className="froggy-fallback" aria-hidden>🐸</span>} /></div>
+        <div className="login-frog"><Froggy3D variant="hero" /></div>
         <div className="wood-panel">
           <div className="wood-panel__inner">
             {demoMode && <span className="demo-pill">DEMO-MODUS</span>}
