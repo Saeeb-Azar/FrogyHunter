@@ -50,6 +50,10 @@ export function LobbyPage() {
     return () => { active = false; clearInterval(timer) }
   }, [user])
 
+  useEffect(() => {
+    const t = setTimeout(() => frog.current?.celebrate(), 1400)
+    return () => clearTimeout(t)
+  }, [])
   const poke = () => { frog.current?.celebrate(); playSound('found'); setGreet(g => g + 1) }
   const ribbon = progress?.activeAttempt ? 'WEITERSUCHEN' : progress?.completed ? 'NOCHMAL SPIELEN' : undefined
   const stars = progress?.completed ? starsForRun(progress) : 0
@@ -84,6 +88,7 @@ export function LobbyPage() {
               </span>
               <span className="lvl-card__plank lvl-card__plank--2">Neues Level in&nbsp;<NewLevelCountdown /></span>
               {progress?.completed && <span className="lvl-card__badge">GE-<br />SCHAFFT</span>}
+              {!progress && <span className="lvl-card__new">NEU!</span>}
             </Link>
             <div className="lobby-play"><PlayAssetButton to="/play" ribbon={ribbon} label={ribbon ?? 'Spielen'} /></div>
           </> : <div className="lobby-notice wood-panel"><p>Dein erstes Wochenabenteuer erscheint bald.</p><p>Neues Level in <NewLevelCountdown /></p></div>}

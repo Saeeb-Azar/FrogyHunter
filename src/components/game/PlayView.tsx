@@ -26,6 +26,15 @@ interface Props {
 
 type Flyer = { key: number; from: { x: number; y: number }; to: { x: number; y: number } }
 const ZOOMS = [1, 2, 3]
+const PRAISE = ['GEFUNDEN!', 'SUPER!', 'KLASSE!', 'QUAK-TASTISCH!', 'STARK!']
+const TIPS = [
+  'Froggys lieben Seerosenblätter, Baumhöhlen und dichtes Gras.',
+  'Schau auch in die Ecken – dort verstecken sich die Frechsten.',
+  'Schnell hintereinander finden gibt eine Combo!',
+  'Ohne Hinweise und mit wenig Fehlklicks gibt es 3 Sterne.',
+  'Mit der Lupe kannst du bis zu 3× hineinzoomen.',
+]
+const vibrate = (p: number | number[]) => { try { navigator.vibrate?.(p) } catch { /* nicht unterstützt */ } }
 /** Rahmenstärke von play_pic.png in px */
 const FRAME = 16
 
@@ -55,6 +64,11 @@ export function PlayView({ level, markers, uid, levelNumber, testMode, onExitTes
   const [pulseSlot, setPulseSlot] = useState<number | null>(null)
   const [shake, setShake] = useState(0)
   const [fullscreen, setFullscreen] = useState(false)
+  const [praise, setPraise] = useState<{ text: string; key: number; combo: boolean } | null>(null)
+  const [nudge, setNudge] = useState(false)
+  const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)])
+  const lastFindAt = useRef(0)
+  const streak = useRef(0)
   const imageRef = useRef<HTMLImageElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const gesture = useRef<{ x: number; y: number; moved: boolean } | null>(null)
@@ -116,7 +130,10 @@ export function PlayView({ level, markers, uid, levelNumber, testMode, onExitTes
   }, [pause])
   useEffect(() => {
     if (!running) return
-    const display = window.setInterval(() => setRun(snapshot()), 100)
+    const display = window.setInterval(() => {
+      setRun(snapshot())
+      setNudge(performance.now() - lastFindAt.current > 25000 && current.current.hintsUsed < MAX_HINTS)
+    }, 100)
     const checkpoint = window.setInterval(() => persist(snapshot()), 5000)
     return () => { clearInterval(display); clearInterval(checkpoint) }
   }, [running, persist, snapshot])
@@ -125,6 +142,11 @@ export function PlayView({ level, markers, uid, levelNumber, testMode, onExitTes
     const timeout = setTimeout(() => setHint(null), 2600)
     return () => clearTimeout(timeout)
   }, [hint])
+  useEffect(() => {
+    if (!praise) return
+    const timeout = setTimeout(() => setPraise(null), 1100)
+    return () => clearTimeout(timeout)
+  }, [praise])
   useEffect(() => {
     if (!feedback) return
     const timeout = setTimeout(() => setFeedback(null), 800)
@@ -146,6 +168,7 @@ export function PlayView({ level, markers, uid, levelNumber, testMode, onExitTes
   function resume() {
     if (!imageReady || !initialized || !validateMarkers(markers) || current.current.completed) return
     started.current = performance.now()
+    lastFindAt.current = performance.now()
     runningRef.current = true
     setHasStarted(true)
     setRunning(true)
@@ -167,8 +190,22 @@ export function PlayView({ level, markers, uid, levelNumber, testMode, onExitTes
     const next = snapshot()
     started.current = performance.now()
     next.clicks += 1
-    if (hit) { next.foundFroggys = [...next.foundFroggys, hit.id]; playSound('found'); flyToSlot(clientX, clientY, next.foundFroggys.length - 1) }
-    else { next.misses += 1; playSound('miss'); setShake(s => s + 1) }
+    if (hit) {
+      next.foundFroggys = [...next.foundFroggys, hit.id]
+      playSound('found')
+      vibrate(35)
+      flyToSlot(clientX, clientY, next.foundFroggys.length - 1)
+      const now = performance.now()
+      streak.current = now - lastFindAt.current < 6000 && lastFindAt.current > 0 ? streak.current + 1 : 1
+      lastFindAt.current = now
+      setNudge(false)
+      if (next.foundFroggys.length < markers.length) {
+        const combo = streak.current >= 2
+        if (combo) setTimeout(() => playSound('combo'), 180)
+        setPraise({ key: now, combo, text: combo ? `COMBO ×${streak.current}!` : PRAISE[(next.foundFroggys.length - 1) % PRAISE.length] })
+      }
+    }
+    else { next.misses += 1; playSound('miss'); vibrate([15, 40, 15]); setShake(s => s + 1); streak.current = 0 }
     setFeedback({ x: (clientX - rect.left) / rect.width, y: (clientY - rect.top) / rect.height, hit: Boolean(hit), key: Date.now() })
     if (next.foundFroggys.length === markers.length) {
       next.completed = true
@@ -191,6 +228,8 @@ export function PlayView({ level, markers, uid, levelNumber, testMode, onExitTes
     const next = snapshot()
     started.current = performance.now()
     next.hintsUsed += 1
+    lastFindAt.current = performance.now()
+    setNudge(false)
     replaceRun(next)
     setHint({ x: Math.max(.16, Math.min(.84, m.x + .055)), y: Math.max(.14, Math.min(.86, m.y - .045)) })
     setZoom(1)
@@ -263,11 +302,12 @@ export function PlayView({ level, markers, uid, levelNumber, testMode, onExitTes
           {feedback && <span key={feedback.key} className={`tap-burst ${feedback.hit ? 'hit' : 'miss'}`} style={{ left: `${feedback.x * 100}%`, top: `${feedback.y * 100}%` }} aria-hidden><span>{feedback.hit ? '+1' : '✕'}</span></span>}
         </div>
       </div>
+      {praise && <div key={praise.key} className={`praise${praise.combo ? ' praise--combo' : ''}`} aria-live="polite">{praise.text}</div>}
     </div>
     </div>
 
     <div className="play-bottom">
-      <WoodRoundButton icon="hint" label={`Hinweis (${hintsLeft} übrig)`} onClick={useHint} disabled={!running || hintsLeft <= 0} badge={hintsLeft} />
+      <span className={nudge && running ? 'nudge' : undefined}><WoodRoundButton icon="hint" label={`Hinweis (${hintsLeft} übrig)`} onClick={useHint} disabled={!running || hintsLeft <= 0} badge={hintsLeft} /></span>
       <FrogPlank total={markers.length} found={foundCount} pulseIndex={pulseSlot} />
       <AssetRoundButton src={ASSET.zoom} label={`Zoom ${zoom}× – tippen zum Wechseln`} onClick={cycleZoom} disabled={!running} badge={`${zoom}×`} active={zoom > 1} />
     </div>
@@ -282,6 +322,7 @@ export function PlayView({ level, markers, uid, levelNumber, testMode, onExitTes
       <h2>{hasStarted ? 'Kleine Verschnaufpause' : level.title}</h2>
       <p>{hasStarted ? 'Die Zeit steht still. Deine Froggys warten auf dich.' : `Finde alle ${markers.length} Froggys direkt im Bild. Zoom und ${MAX_HINTS} Hinweise helfen dir.`}</p>
       <FrogPlank total={markers.length} found={foundCount} compact />
+      <div className="parchment-plate"><b>Froggy-Tipp</b>{tip}</div>
       {imageError
         ? <p role="alert">Das Suchbild konnte nicht geladen werden. <button className="text-link" onClick={() => { setImageError(false); if (imageRef.current) imageRef.current.src = level.imageUrl }}>Erneut laden</button></p>
         : <div className="game-modal__actions">

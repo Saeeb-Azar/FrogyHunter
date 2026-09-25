@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+import { playSound } from '../../audio/soundManager'
 import { Confetti } from '../game-ui/Confetti'
 import { Froggy3D } from '../game-ui/Froggy3D'
 import { StoneButton } from '../game-ui/PlayButtons'
@@ -22,6 +24,21 @@ interface Props {
 }
 
 export function VictoryOverlay({ title, durationMs, clicks, misses, hintsUsed, stars, xp, status, continueLabel, onContinue, onReplay, busy, onRetrySave }: Props) {
+  const [shownXp, setShownXp] = useState(0)
+  useEffect(() => {
+    const timers = [650, 950, 1250].slice(0, stars).map(ms => window.setTimeout(() => playSound('star'), ms))
+    let raf = 0
+    if (xp != null) {
+      const t0 = performance.now() + 1400
+      const tick = (now: number) => {
+        const t = Math.max(0, Math.min(1, (now - t0) / 900))
+        setShownXp(Math.round(xp * (1 - Math.pow(1 - t, 3))))
+        if (t < 1) raf = requestAnimationFrame(tick)
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    return () => { timers.forEach(clearTimeout); cancelAnimationFrame(raf) }
+  }, [stars, xp])
   return (
     <div className="victory" role="dialog" aria-modal="true" aria-label="Alle Froggys gefunden">
       <div className="victory__rays" aria-hidden />
@@ -40,7 +57,7 @@ export function VictoryOverlay({ title, durationMs, clicks, misses, hintsUsed, s
             <span className="stat-chip"><b>{misses}</b><span>Fehlklicks</span></span>
             <span className="stat-chip"><b>{hintsUsed}</b><span>Hinweise</span></span>
           </div>
-          {xp != null ? <span className="victory__xp">+{xp} XP</span> : <p className="panel-note" style={{ textAlign: 'center' }}>Wiederholung · deine Bestzeit zählt</p>}
+          {xp != null ? <span className="victory__xp">+{shownXp} XP</span> : <p className="panel-note" style={{ textAlign: 'center' }}>Wiederholung · deine Bestzeit zählt</p>}
           <p className="panel-note" role="status" style={{ textAlign: 'center' }}>{status}</p>
           <div className="game-modal__actions">
             {onRetrySave && <StoneButton tone="gold" onClick={onRetrySave}>Speichern wiederholen</StoneButton>}

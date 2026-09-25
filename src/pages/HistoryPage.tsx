@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { playSound } from '../audio/soundManager'
 import { Confetti } from '../components/game-ui/Confetti'
@@ -132,7 +132,7 @@ export function HistoryPage() {
       const a = path[i], b = path[i + 1]
       frog.current?.face(b.x > a.x + 4 ? 0.9 : b.x < a.x - 4 ? -0.9 : 0)
       frog.current?.hop(HOP_MS)
-      playSound('tap')
+      playSound('hop')
       const t0 = performance.now()
       const step = (now: number) => {
         if (cancelled) return
@@ -220,6 +220,14 @@ export function HistoryPage() {
         </div>}
       </div>
 
+      {!loading && !error && n > 0 && (() => {
+        const target = rows[Math.min(currentIdx, n - 1)]
+        const idx = rows.indexOf(target)
+        return <Link to={`/play?level=${encodeURIComponent(target.level.id)}`} className="map-play" aria-label={`Level ${idx + 1} spielen: ${target.level.title}`}>
+          <img src={ASSET.btnSpielen} alt="" draggable={false} />
+          <span className="map-play__ribbon">LEVEL {idx + 1}</span>
+        </Link>
+      })()}
       {celebrate && <><Confetti count={50} /><div className="map-toast wood-panel"><div className="wood-panel__inner"><span className="wood-text" style={{ fontSize: 20 }}>{celebrate}</span></div></div></>}
 
       <GameModal open={Boolean(selected)} label={selected?.level.title ?? 'Level'} title={selected ? `LEVEL ${rows.indexOf(selected) + 1}` : undefined} onClose={() => setSelected(null)}>

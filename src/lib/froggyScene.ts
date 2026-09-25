@@ -73,7 +73,7 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.05
+  renderer.toneMappingExposure = 0.92
   renderer.setClearColor(0x000000, 0)
   renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;pointer-events:none'
   renderer.domElement.setAttribute('aria-hidden', 'true')
@@ -82,14 +82,14 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(variant === 'token' ? 30 : 34, 1, 0.1, 60)
   const lookY = variant === 'token' ? 0.85 : 1.0
-  scene.add(new THREE.HemisphereLight(0xfff6d8, 0x2f6b4f, 2.2))
-  const key = new THREE.DirectionalLight(0xffe9b8, 3.4)
+  scene.add(new THREE.HemisphereLight(0xfff0d0, 0x1f4a33, 1.55))
+  const key = new THREE.DirectionalLight(0xffe2a8, 2.9)
   key.position.set(-3, 6, 5)
   scene.add(key)
-  const rim = new THREE.DirectionalLight(0x9fe8ff, 2.2)
+  const rim = new THREE.DirectionalLight(0x9fe8ff, 1.8)
   rim.position.set(4, 3, -4)
   scene.add(rim)
-  const fill = new THREE.PointLight(0xffd27a, 6, 12)
+  const fill = new THREE.PointLight(0xffd27a, 3, 12)
   fill.position.set(2, 1.5, 3)
   scene.add(fill)
 
@@ -106,11 +106,11 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
     return m
   }
 
-  const green = phys(0x8fd13a, { sheen: 0.4, sheenColor: new THREE.Color(0xd8ff9a) })
-  const lightGreen = phys(0xb4e257)
-  const darkGreen = std(0x3f7424, 0.6)
-  const spotMat = phys(0x5fa82b)
-  const cream = phys(0xfff0b8, { clearcoat: 0.3 })
+  const green = phys(0x4f9a22, { sheen: 0.25, sheenColor: new THREE.Color(0xa8d86a) })
+  const lightGreen = phys(0x74b332)
+  const darkGreen = std(0x24501a, 0.6)
+  const spotMat = phys(0x2f6f18)
+  const cream = phys(0xe6cf86, { clearcoat: 0.3 })
   const black = std(0x10201a, 0.08, { metalness: 0.1 })
   const white = std(0xffffff, 0.15, { emissive: 0xffffff, emissiveIntensity: 0.35 })
   const iris = std(0x6b4a1c, 0.3)
@@ -235,17 +235,42 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
   const tongueTip = mesh(tongue, tongueMat, [0, 0, 1], [1.6, 1.6, 1])
   tongue.visible = false
 
-  // Glühwürmchen / Fliege
-  let fly: THREE.Sprite | null = null
+  // Fliege (Froggys Lieblingssnack): Körper, große Augen, schlagende Flügel + kleiner Leuchtschein
+  let fly: THREE.Group | null = null
+  const wings: THREE.Object3D[] = []
+  let flyHalo: THREE.Sprite | null = null
   if (variant === 'hero') {
+    fly = new THREE.Group()
+    const flyBody = phys(0x3d6a8c, { roughness: 0.3, metalness: 0.35, clearcoat: 1, iridescence: 0.6 })
+    const flyStripe = phys(0xffc93c, { roughness: 0.35 })
+    const flyEye = phys(0xc0301f, { clearcoat: 1, clearcoatRoughness: 0.1, roughness: 0.2 })
+    mesh(fly, flyBody, [0, 0, -0.1], [0.13, 0.12, 0.2])
+    mesh(fly, flyStripe, [0, 0.005, -0.12], [0.135, 0.125, 0.04])
+    mesh(fly, flyStripe, [0, 0.005, -0.2], [0.11, 0.1, 0.035])
+    mesh(fly, flyBody, [0, 0.02, 0.1], [0.12, 0.11, 0.11])
+    for (const side of [-1, 1]) {
+      const eye = mesh(fly, flyEye, [side * 0.08, 0.06, 0.17], [0.085, 0.09, 0.075])
+      mesh(eye, white, [-0.3, 0.45, 0.7], [0.3, 0.3, 0.3])
+      const wingMat = new THREE.MeshPhysicalMaterial({ color: 0xf2fbff, transparent: true, opacity: 0.82, emissive: 0x9fd8ff, emissiveIntensity: 0.25, roughness: 0.1, iridescence: 1, side: THREE.DoubleSide, depthWrite: false })
+      mats.push(wingMat)
+      const pivot = new THREE.Group()
+      pivot.position.set(side * 0.05, 0.1, 0.02)
+      fly.add(pivot)
+      const wing = mesh(pivot, wingMat, [side * 0.2, 0, -0.06], [0.22, 1, 0.11], new THREE.CircleGeometry(1, 20).rotateX(-Math.PI / 2))
+      wing.userData.side = side
+      wings.push(pivot)
+    }
+    fly.scale.setScalar(2.1)
+    scene.add(fly)
     const glow = glowTexture()
     textures.push(glow)
-    const flyMat = new THREE.SpriteMaterial({ map: glow, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })
-    mats.push(flyMat)
-    fly = new THREE.Sprite(flyMat)
-    fly.scale.setScalar(0.32)
-    scene.add(fly)
+    const haloMat = new THREE.SpriteMaterial({ map: glow, transparent: true, opacity: 0.35, depthWrite: false })
+    mats.push(haloMat)
+    flyHalo = new THREE.Sprite(haloMat)
+    flyHalo.scale.setScalar(0.9)
+    scene.add(flyHalo)
   }
+  const flyPrev = new THREE.Vector3()
 
   // Party-Konfetti in 3D
   const confetti: THREE.Mesh[] = []
@@ -353,9 +378,10 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
       })
 
       // Fliege fliegt Achten; Froggy schnappt ab und zu mit der Zunge danach
-      if (fly) {
-        const ft = time * 0.7
-        flyPos.set(Math.sin(ft) * 2.1, 2.3 + Math.sin(ft * 2) * 0.45, 0.9 + Math.cos(ft) * 0.6)
+      if (fly && flyHalo) {
+        const ft = time * 0.62
+        flyPrev.copy(flyPos)
+        flyPos.set(Math.sin(ft) * 2.3, 2.0 + Math.sin(ft * 2) * 0.35 + Math.sin(time * 9) * 0.04, 1.1 + Math.cos(ft) * 0.55)
         const te = time - tongueStart
         if (time > nextTongue && te > 2) { tongueStart = time; nextTongue = time + 7 + Math.random() * 5 }
         if (te < 0.5) {
@@ -369,15 +395,19 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
         } else {
           tongue.visible = false
           fly.visible = te > 1.4
-          if (te > 1.4 && te < 1.8) fly.material.opacity = (te - 1.4) / 0.4
-          else fly.material.opacity = 0.85 + Math.sin(time * 18) * 0.15
+          fly.scale.setScalar(te > 1.4 && te < 1.8 ? 2.1 * (te - 1.4) / 0.4 : 2.1)
         }
         fly.position.copy(flyPos)
+        if (flyPos.distanceToSquared(flyPrev) > 1e-6) fly.lookAt(flyPos.clone().add(flyPos.clone().sub(flyPrev)))
+        const flap = Math.sin(time * 70) * 0.7
+        wings.forEach(w => { w.rotation.z = (w.position.x > 0 ? 1 : -1) * (0.35 + flap) })
+        flyHalo.visible = fly.visible
+        flyHalo.position.copy(flyPos)
       }
     } else {
       frog.position.y = baseY
       frog.scale.set(1, 1, 1)
-      if (fly) fly.position.set(1.8, 2.4, 0.8)
+      if (fly) { fly.position.set(1.6, 2.4, 1.0); flyHalo?.position.copy(fly.position) }
     }
 
     confetti.forEach(c => {

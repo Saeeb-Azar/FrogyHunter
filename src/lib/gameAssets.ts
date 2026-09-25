@@ -25,6 +25,7 @@ export const ASSET = {
   leerFroggy: g('leer-froggy'),
   lvlKachel: g('lvl-kachel'),
   profilePanel: g('profile-panel'),
+  parchment: g('parchment'),
 } as const
 
 /** CSS-Variablen, damit Stylesheets die Grafiken mit korrekter BASE_URL nutzen können. */

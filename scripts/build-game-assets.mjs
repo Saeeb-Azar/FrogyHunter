@@ -40,6 +40,13 @@ for (const [src, name, width] of UI) {
   console.log(`${name}.webp`, `${info.width}x${info.height}`)
 }
 
+// Pergament-Tafel (RGB mit dunklem Rand → Schwellwert-Zuschnitt, als 9-Slice-Panel genutzt)
+{
+  const t = await sharp('public/assets/ui/lvl_kachel_v2.png').trim({ threshold: 30 }).toBuffer()
+  const info = await sharp(t).resize({ width: 900 }).webp({ quality: 86 }).toFile(`${OUT}/parchment.webp`)
+  console.log('parchment.webp', `${info.width}x${info.height}`)
+}
+
 // Hintergründe
 await sharp('public/assets/game-scene-bg.png').resize({ width: 1280 }).webp({ quality: 80 }).toFile(`${OUT}/bg-wide.webp`)
 await sharp('public/assets/game_ui.png').resize({ width: 1447 }).webp({ quality: 82 }).toFile(`${OUT}/bg-play-wide.webp`)
