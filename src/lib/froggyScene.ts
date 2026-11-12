@@ -12,7 +12,7 @@ export type FroggyVariant = 'hero' | 'token' | 'party'
 
 export interface FroggySceneOptions {
   variant?: FroggyVariant
-  /** Saisonales Accessoire: Schal (Winter), Ahornblatt (Herbst), Blüte (Frühling) */
+  /** Saisonales Accessoire: Schal (Winter), Blüte (Frühling) */
   season?: 'spring' | 'summer' | 'autumn' | 'winter'
   reduceMotion?: boolean
   onReady?: () => void
@@ -338,15 +338,6 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
     scarf.add(tail)
     for (let k = 0; k < 5; k++) mesh(tail, k % 2 ? wool : red, [0, -0.08 - k * 0.075, 0], [0.13, 0.04, 0.045], new THREE.BoxGeometry(1.6, 1.8, 1))
     for (let k = 0; k < 4; k++) mesh(tail, red, [(k - 1.5) * 0.05, -0.47, 0], [0.012, 0.05, 0.012], new THREE.BoxGeometry(1, 1, 1))
-  } else if (options.season === 'autumn') {
-    const maple = new THREE.Shape()
-    const pts: [number, number][] = [[0, 1], [0.2, 0.55], [0.6, 0.75], [0.48, 0.3], [1, 0.25], [0.6, -0.05], [0.75, -0.45], [0.2, -0.3], [0.08, -0.7], [-0.08, -0.7], [-0.2, -0.3], [-0.75, -0.45], [-0.6, -0.05], [-1, 0.25], [-0.48, 0.3], [-0.6, 0.75], [-0.2, 0.55]]
-    maple.moveTo(pts[0][0], pts[0][1]); pts.slice(1).forEach(([x, y]) => maple.lineTo(x, y)); maple.closePath()
-    const leafGeo = new THREE.ExtrudeGeometry(maple, { depth: 0.04, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2 })
-    const leafMat = phys(0xf07b1d, { roughness: 0.55, clearcoat: 0.3, side: THREE.DoubleSide })
-    const leaf = mesh(head, leafMat, [0.02, 0.92, -0.02], [0.3, 0.3, 0.3], leafGeo)
-    leaf.rotation.set(-0.35, 0.1, 0.35)
-    mesh(leaf, std(0x8a4a12, 0.6), [0, -0.95, 0.03], [0.05, 0.4, 0.05], new THREE.CylinderGeometry(1, 1, 1, 6))
   } else if (options.season === 'spring') {
     const flowerHat = new THREE.Group()
     flowerHat.position.set(0, 0.86, 0.02)

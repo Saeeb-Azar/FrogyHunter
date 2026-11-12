@@ -85,7 +85,7 @@ Das Skript entfernt außerdem den gemalten Frosch aus dem Lobby-Hintergrund (`bg
 
 ## Jahreszeiten
 
-Die Spielwelt passt sich automatisch der Jahreszeit an (Berliner Datum): Frühling (März–Mai) mit Blüten, Sommer (Juni–Aug.) mit warmem Licht, Herbst (Sept.–Nov.) mit buntem Laub und Winter (Dez.–Feb.) mit Schnee. Froggy trägt passend Blüte, Ahornblatt oder Schal. Die Suchbilder selbst werden nie verändert.
+Die Spielwelt passt sich automatisch der Jahreszeit an (Berliner Datum): Frühling (März–Mai) mit Blüten, Sommer (Juni–Aug.) mit warmem Licht, Herbst (Sept.–Nov.) mit buntem Laub und Winter (Dez.–Feb.) mit Schnee. Froggy trägt im Frühling eine Blüte und im Winter einen Schal. Die Suchbilder selbst werden nie verändert.
 
 - Zum Testen: `?season=winter` (bzw. `spring`, `summer`, `autumn`) an die URL hängen, `?season=auto` stellt zurück.
 - Herbst-/Winter-Hintergründe neu erzeugen: `node scripts/build-season-backgrounds.mjs`
