@@ -83,6 +83,13 @@ node scripts/build-game-assets.mjs
 
 Das Skript entfernt außerdem den gemalten Frosch aus dem Lobby-Hintergrund (`bg-lobby-phone.webp`), weil dort der animierte 3D-Froggy sitzt. Nach dem Austauschen einer Grafik einfach erneut ausführen. Die Pfade stehen zentral in `src/lib/gameAssets.ts`.
 
+## Jahreszeiten
+
+Die Spielwelt passt sich automatisch der Jahreszeit an (Berliner Datum): Frühling (März–Mai) mit Blüten, Sommer (Juni–Aug.) mit warmem Licht, Herbst (Sept.–Nov.) mit buntem Laub und Winter (Dez.–Feb.) mit Schnee. Froggy trägt passend Blüte, Ahornblatt oder Schal. Die Suchbilder selbst werden nie verändert.
+
+- Zum Testen: `?season=winter` (bzw. `spring`, `summer`, `autumn`) an die URL hängen, `?season=auto` stellt zurück.
+- Herbst-/Winter-Hintergründe neu erzeugen: `node scripts/build-season-backgrounds.mjs`
+
 ## Build
 
 ```bash

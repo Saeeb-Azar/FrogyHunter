@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import type { FroggySceneHandle, FroggyVariant } from '../../lib/froggyScene'
+import { currentSeason } from '../../lib/season'
 import { useSettingsStore } from '../../stores/settingsStore'
 
 export interface Froggy3DHandle {
@@ -35,6 +36,7 @@ export const Froggy3D = forwardRef<Froggy3DHandle, Props>(function Froggy3D({ va
       if (cancelled || !container.current) return
       scene.current = mountFroggyScene(container.current, {
         variant,
+        season: currentSeason(),
         reduceMotion: reduceMotion || matchMedia('(prefers-reduced-motion: reduce)').matches,
         onReady: () => setReady(true),
         onError: () => setReady(false),

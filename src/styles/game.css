@@ -840,3 +840,61 @@ img { -webkit-user-drag: none; user-select: none; }
 .studio-item__go { flex: none; font: 400 14px var(--g-display); color: #3f8a1d; }
 @media (max-width: 420px) { .studio-item__go { display: none; } .studio .card--pad { padding: 16px 14px; } }
 .studio-list li { min-width: 0; } .studio-item { width: 100%; }
+
+/* ==========================================================================
+   JAHRESZEITEN – automatisch nach Datum (src/lib/season.ts)
+   ========================================================================== */
+.stage-season { position: absolute; inset: 0; z-index: -2; pointer-events: none; }
+
+/* ---- Herbst: warmes Laub, goldenes Licht ---- */
+.season-autumn .stage-bg { background-image: var(--a-bg-lobby-autumn); }
+.season-autumn .stage-backdrop { background-image: var(--a-bg-wide-autumn); }
+.season-autumn.stage-root--play .stage-backdrop { background-image: var(--a-bg-play-wide-autumn); }
+@media (min-width: 900px) {
+  .season-autumn .stage--wide .stage-bg { background-image: var(--a-bg-wide-autumn); }
+  .season-autumn.stage-root--play .stage--wide .stage-bg { background-image: var(--a-bg-play-wide-autumn); }
+}
+.season-autumn .stage-season { background: radial-gradient(120% 70% at 70% 0%, #ffb24733, #0000 60%), linear-gradient(#0000 55%, #8a3b0c33); mix-blend-mode: soft-light; }
+.season-autumn .stage-rays { background: repeating-conic-gradient(from 200deg at 70% -5%, #ffd27a24 0 4deg, #0000 4deg 13deg); }
+.stage-petal--maple i {
+  width: calc(17px * var(--size)); height: calc(17px * var(--size)); border-radius: 0;
+  background: linear-gradient(135deg, #ffcf4a, #f07b1d 55%, #b8320f);
+  clip-path: polygon(50% 0, 60% 22%, 80% 12%, 74% 36%, 100% 38%, 80% 54%, 90% 72%, 62% 66%, 56% 100%, 44% 100%, 38% 66%, 10% 72%, 20% 54%, 0 38%, 26% 36%, 20% 12%, 40% 22%);
+}
+.stage-petal--maple:nth-child(3n) i { background: linear-gradient(135deg, #ff8a3d, #d9431a 60%, #8f1f0c); }
+.stage-petal--maple:nth-child(4n) i { background: linear-gradient(135deg, #ffe066, #f2a91f 60%, #b86a10); }
+.stage-petal--oak i {
+  width: calc(10px * var(--size)); height: calc(19px * var(--size));
+  border-radius: 45% 55% 50% 50% / 60% 60% 40% 40%;
+  background: linear-gradient(160deg, #d9a14a, #a8601f 60%, #6b3a12);
+  box-shadow: inset 0 0 0 1px #5a2f0a55;
+}
+.season-autumn .stage-firefly { background: #ffd9a0; box-shadow: 0 0 10px 3px #ffb24799; }
+
+/* ---- Winter: kalt, Schnee, Frost ---- */
+.season-winter .stage-bg { background-image: var(--a-bg-lobby-winter); }
+.season-winter .stage-backdrop { background-image: var(--a-bg-wide-winter); }
+.season-winter.stage-root--play .stage-backdrop { background-image: var(--a-bg-play-wide-winter); }
+@media (min-width: 900px) {
+  .season-winter .stage--wide .stage-bg { background-image: var(--a-bg-wide-winter); }
+  .season-winter.stage-root--play .stage--wide .stage-bg { background-image: var(--a-bg-play-wide-winter); }
+}
+.season-winter .stage-season {
+  background:
+    radial-gradient(140% 90% at 50% 40%, #0000 55%, #eaf6ffcc 100%),
+    linear-gradient(#0000 78%, #f4fbffd9 92%, #ffffff 100%),
+    linear-gradient(#bfe3ff33, #dff1ff22);
+}
+.season-winter .stage-rays { opacity: .35; background: repeating-conic-gradient(from 200deg at 70% -5%, #e8f6ff22 0 4deg, #0000 4deg 13deg); }
+.stage-petal--snow i, .stage-petal--flake i {
+  left: -4px; top: -4px; width: calc(8px * var(--size)); height: calc(8px * var(--size)); border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff, #f2f9ff 60%, #d8ecff);
+  box-shadow: 0 0 6px 1px #ffffffaa; animation: none;
+}
+.stage-petal--flake i { width: calc(13px * var(--size)); height: calc(13px * var(--size)); background: none; box-shadow: none;
+  -webkit-mask: radial-gradient(circle, #000 18%, #0000 20%), conic-gradient(from 0deg, #000 0 4deg, #0000 4deg 60deg, #000 60deg 64deg, #0000 64deg 120deg, #000 120deg 124deg, #0000 124deg 180deg, #000 180deg 184deg, #0000 184deg 240deg, #000 240deg 244deg, #0000 244deg 300deg, #000 300deg 304deg, #0000 304deg);
+  background: #fff; filter: drop-shadow(0 0 3px #fff); animation: petal-spin calc(5s + var(--size) * 4s) linear infinite; }
+
+/* ---- Sommer: satte Farben, warmes Licht ---- */
+.season-summer .stage-bg { filter: saturate(1.15) brightness(1.04); }
+.season-summer .stage-season { background: radial-gradient(110% 70% at 75% 0%, #fff3b040, #0000 60%); mix-blend-mode: screen; }

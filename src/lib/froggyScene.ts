@@ -12,6 +12,8 @@ export type FroggyVariant = 'hero' | 'token' | 'party'
 
 export interface FroggySceneOptions {
   variant?: FroggyVariant
+  /** Saisonales Accessoire: Schal (Winter), Ahornblatt (Herbst), Blüte (Frühling) */
+  season?: 'spring' | 'summer' | 'autumn' | 'winter'
   reduceMotion?: boolean
   onReady?: () => void
   onError?: () => void
@@ -317,6 +319,48 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
     new THREE.Vector3(0.19, -0.24, 0.69), new THREE.Vector3(0.37, -0.12, 0.66),
   ])
   mesh(head, darkGreen, [0, 0, 0], [1, 1, 1], new THREE.TubeGeometry(smile, 28, 0.02, 8, false))
+
+  // ---------- Saisonale Accessoires ----------
+  if (options.season === 'winter') {
+    const red = phys(0xd93a2f, { roughness: 0.75, clearcoat: 0, sheen: 1, sheenColor: new THREE.Color(0xff9a8a) })
+    const wool = phys(0xfff6ea, { roughness: 0.85, clearcoat: 0, sheen: 1 })
+    const scarf = new THREE.Group()
+    scarf.position.set(0, 0.9, 0.02)
+    scarf.scale.set(1, 1, 0.8)
+    body.add(scarf)
+    for (let k = 0; k < 6; k++) {
+      const ring = mesh(scarf, k % 2 ? wool : red, [0, (k - 2.5) * 0.05, 0], [1 - Math.abs(k - 2.5) * 0.015, 1, 1 - Math.abs(k - 2.5) * 0.015], new THREE.TorusGeometry(0.84, 0.075, 12, 48))
+      ring.rotation.x = Math.PI / 2
+    }
+    const tail = new THREE.Group()
+    tail.position.set(0.36, -0.06, 0.66)
+    tail.rotation.set(0.25, 0, -0.18)
+    scarf.add(tail)
+    for (let k = 0; k < 5; k++) mesh(tail, k % 2 ? wool : red, [0, -0.08 - k * 0.075, 0], [0.13, 0.04, 0.045], new THREE.BoxGeometry(1.6, 1.8, 1))
+    for (let k = 0; k < 4; k++) mesh(tail, red, [(k - 1.5) * 0.05, -0.47, 0], [0.012, 0.05, 0.012], new THREE.BoxGeometry(1, 1, 1))
+  } else if (options.season === 'autumn') {
+    const maple = new THREE.Shape()
+    const pts: [number, number][] = [[0, 1], [0.2, 0.55], [0.6, 0.75], [0.48, 0.3], [1, 0.25], [0.6, -0.05], [0.75, -0.45], [0.2, -0.3], [0.08, -0.7], [-0.08, -0.7], [-0.2, -0.3], [-0.75, -0.45], [-0.6, -0.05], [-1, 0.25], [-0.48, 0.3], [-0.6, 0.75], [-0.2, 0.55]]
+    maple.moveTo(pts[0][0], pts[0][1]); pts.slice(1).forEach(([x, y]) => maple.lineTo(x, y)); maple.closePath()
+    const leafGeo = new THREE.ExtrudeGeometry(maple, { depth: 0.04, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2 })
+    const leafMat = phys(0xf07b1d, { roughness: 0.55, clearcoat: 0.3, side: THREE.DoubleSide })
+    const leaf = mesh(head, leafMat, [0.02, 0.92, -0.02], [0.3, 0.3, 0.3], leafGeo)
+    leaf.rotation.set(-0.35, 0.1, 0.35)
+    mesh(leaf, std(0x8a4a12, 0.6), [0, -0.95, 0.03], [0.05, 0.4, 0.05], new THREE.CylinderGeometry(1, 1, 1, 6))
+  } else if (options.season === 'spring') {
+    const flowerHat = new THREE.Group()
+    flowerHat.position.set(0, 0.86, 0.02)
+    flowerHat.rotation.set(0.9, 0, 0.15)
+    flowerHat.scale.setScalar(1.6)
+    head.add(flowerHat)
+    const petal = phys(0xff9ec5, { clearcoat: 0.4 })
+    for (let k = 0; k < 6; k++) {
+      const a = k * Math.PI / 3
+      const p = mesh(flowerHat, petal, [Math.sin(a) * 0.1, 0, Math.cos(a) * 0.1], [0.07, 0.03, 0.12])
+      p.rotation.y = a
+    }
+    mesh(flowerHat, std(0xffd23f, 0.4), [0, 0.03, 0], [0.06, 0.04, 0.06])
+  }
 
   // Zunge (Fliegenfang)
   const tongue = mesh(head, tongueMat, [0, -0.2, 0.62], [0.07, 0.07, 0.001], new THREE.CylinderGeometry(1, 1, 1, 12).rotateX(Math.PI / 2).translate(0, 0, 0.5))
