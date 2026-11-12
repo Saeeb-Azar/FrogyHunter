@@ -267,8 +267,12 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
   const mouthInside = mesh(head, std(0x8a2a3a, 0.6), [0, -0.2, 0.5], [0.5, 0.1, 0.16])
   mouthInside.visible = false
   const pupils: THREE.Mesh[] = []
-  const hips: THREE.Group[] = []
-  const shins: THREE.Group[] = []
+  type Leg = { side: number; thigh: THREE.Mesh; shin: THREE.Mesh; foot: THREE.Group }
+  const legs: Leg[] = []
+  const legGeo = new THREE.CylinderGeometry(1, 0.8, 1, 12)
+  const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z)
+  const UP = V(0, 1, 0)
+  const tmpA = V(0, 0, 0), tmpB = V(0, 0, 0), tmpK = V(0, 0, 0)
   const irisTex = irisTexture()
   textures.push(irisTex)
   const irisMat = new THREE.MeshBasicMaterial({ map: irisTex, transparent: true })
@@ -292,26 +296,21 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
     mesh(head, darkGreen, [side * 0.15, 0.03, 0.66], [0.03, 0.02, 0.012])
     // Beine, Arme, Füße
     // Hinterbein mit Gelenk: sitzt eingeklappt, streckt sich beim Absprung nach hinten
-    const hip = new THREE.Group()
-    hip.position.set(side * 0.62, 0.36, -0.12)
-    hip.userData.side = side
-    frog.add(hip)
-    mesh(hip, green, [side * 0.1, -0.06, 0.18], [0.44, 0.36, 0.48])
-    const shin = new THREE.Group()
-    shin.position.set(side * 0.14, -0.2, 0.42)
-    hip.add(shin)
-    mesh(shin, lightGreen, [0, 0, -0.22], [0.13, 0.12, 0.3])
-    const hindFoot = mesh(shin, lightGreen, [0, -0.08, -0.5], [0.16, 0.05, 0.26])
-    for (let t = 0; t < 3; t++) mesh(hindFoot, cream, [(t - 1) * 0.55, 0, -0.9], [0.28, 0.9, 0.22])
-    hips.push(hip); shins.push(shin)
+    // Hinterbein als Gelenkkette: Oberschenkel (Keule) → Knie → Unterschenkel → Fuß.
+    // Sitzend eingeklappt (Fuß vorne neben dem Bauch), beim Sprung nach unten/hinten gestreckt.
+    const thigh = mesh(frog, green, [side * 0.72, 0.3, 0.06], [0.44, 0.36, 0.48])
+    const shinMesh = mesh(frog, green, [0, 0, 0], [0.12, 1, 0.12], legGeo)
+    const foot = new THREE.Group()
+    frog.add(foot)
+    mesh(foot, lightGreen, [0, 0.01, 0.06], [0.27, 0.1, 0.28])
+    for (let toe = 0; toe < 3; toe++) {
+      mesh(foot, lightGreen, [(toe - 1) * 0.16, -0.005, 0.26], [0.085, 0.06, 0.16])
+      mesh(foot, cream, [(toe - 1) * 0.17, -0.01, 0.4], [0.055, 0.045, 0.05])
+    }
+    legs.push({ side, thigh, shin: shinMesh, foot })
     const arm = mesh(body, lightGreen, [side * 0.58, 0.38, 0.5], [0.16, 0.38, 0.17])
     arm.rotation.z = side * 0.22
     arm.userData.side = side
-    mesh(frog, lightGreen, [side * 0.58, 0.09, 0.7], [0.27, 0.1, 0.28])
-    for (let toe = 0; toe < 3; toe++) {
-      mesh(frog, lightGreen, [side * 0.58 + (toe - 1) * 0.16, 0.075, 0.9], [0.085, 0.06, 0.16])
-      mesh(frog, cream, [side * 0.58 + (toe - 1) * 0.17, 0.07, 1.04], [0.055, 0.045, 0.05])
-    }
   }
   const arms = body.children.filter(c => c.userData.side) as THREE.Mesh[]
   const smile = new THREE.CatmullRomCurve3([
@@ -439,6 +438,33 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
   }
   const flyPos = new THREE.Vector3()
 
+  /** Beinhaltung: -1..0 = Ducken, 0 = Sitzen, 1 = voll gestreckt (Absprung/Flug) */
+  const poseLegs = (pose: number) => {
+    const ext = Math.max(0, pose), crouch = Math.max(0, -pose)
+    for (const l of legs) {
+      const sd = l.side
+      // Hüfte → Knie → Knöchel (sitzend) bzw. gestreckt nach unten-hinten
+      tmpA.set(sd * 0.62, 0.34 - crouch * 0.12, -0.08)
+      tmpK.set(sd * (0.86 - ext * 0.2), 0.26 - crouch * 0.1 - ext * 0.5, 0.42 - ext * 0.62)
+      tmpB.set(sd * (0.58 - ext * 0.12), 0.09 - ext * 1.05, 0.64 - ext * 1.15)
+      // Oberschenkel zwischen Hüfte und Knie
+      l.thigh.position.copy(tmpA).lerp(tmpK, 0.5).add(V(sd * 0.04, 0, 0.06 * (1 - ext)))
+      l.thigh.scale.set(0.44 - ext * 0.18, 0.36 - ext * 0.06, 0.48 + ext * 0.05)
+      l.thigh.quaternion.setFromUnitVectors(V(0, 0, 1), tmpK.clone().sub(tmpA).normalize())
+      // Unterschenkel zwischen Knie und Knöchel
+      const dir = tmpB.clone().sub(tmpK)
+      const len = dir.length()
+      l.shin.position.copy(tmpK).lerp(tmpB, 0.5)
+      l.shin.scale.set(0.15, Math.max(0.01, len), 0.15)
+      l.shin.quaternion.setFromUnitVectors(UP, dir.normalize())
+      l.shin.visible = ext > 0.05
+      // Fuß: sitzend flach, im Flug mit den Zehen nach hinten-unten gestreckt
+      l.foot.position.copy(tmpB)
+      l.foot.rotation.set(ext * 2.3, sd * ext * 0.15, 0)
+    }
+  }
+  poseLegs(0)
+
   const draw = (stamp: number) => {
     if (disposed || !visible) return
     const dt = last ? Math.min((stamp - last) / 1000, 0.05) : 0
@@ -502,7 +528,7 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
       if (croakBoost > 0) throat.scale.set(0.3 + croakBoost * 0.28, 0.2 + croakBoost * 0.24, 0.16 + croakBoost * 0.3)
 
       // ---------- Realistischer Sprung: Ducken → Absprung → Flug → Landung ----------
-      let lift = 0, squash = 1, spin = 0, legs = 0, pitch = 0
+      let lift = 0, squash = 1, spin = 0, legPose = 0, pitch = 0
       const jump = (e: number, dur: number, height: number) => {
         const t = e / dur
         if (t < 0.22) { const k = Math.sin(t / 0.22 * Math.PI * 0.5); return { lift: 0, squash: 1 - k * 0.2, legs: -k * 0.25, pitch: k * 0.18, air: 0 } }
@@ -516,25 +542,26 @@ export function mountFroggyScene(container: HTMLElement, options: FroggySceneOpt
       const ce = time - celebration
       if (ce < 1.2) {
         const j = jump(ce, 1.2, variant === 'token' ? 0.3 : 1.3)
-        lift = j.lift; squash = j.squash; legs = j.legs; pitch = j.pitch
+        lift = j.lift; squash = j.squash; legPose = j.legs; pitch = j.pitch
         spin = easeOut(j.air) * Math.PI * 2
         arms.forEach(a => { a.rotation.z = a.userData.side * (0.22 + (j.air > 0 && j.air < 1 ? 1.3 : 0)) })
       }
       const he = time - hopStart
       if (he < hopDur) {
         const j = jump(he, hopDur, variant === 'token' ? 0.22 : hopHeight)
-        if (ce >= 1.2) { lift = j.lift; squash = j.squash; legs = j.legs; pitch = j.pitch; spin = hopSpin * easeOut(j.air) }
+        if (ce >= 1.2) { lift = j.lift; squash = j.squash; legPose = j.legs; pitch = j.pitch; spin = hopSpin * easeOut(j.air) }
       }
       if (variant === 'party') {
         const pt = time % 0.95
         const j = jump(pt, 0.95, 0.85)
-        lift = Math.max(lift, j.lift); squash = j.squash; legs = j.legs; pitch = j.pitch
+        lift = Math.max(lift, j.lift); squash = j.squash; legPose = j.legs; pitch = j.pitch
         arms.forEach(a => { a.rotation.z = a.userData.side * (0.22 + Math.abs(Math.sin(time * 7)) * 1.4) })
         facingTarget = Math.sin(time * 1.4) * 0.5
       }
       if (ce >= 1.2 && variant !== 'party') arms.forEach(a => { a.rotation.z += (a.userData.side * 0.22 - a.rotation.z) * Math.min(dt * 8, 1) })
-      hips.forEach(h => { h.rotation.x = Math.max(0, legs) * 1.05; h.position.y = 0.36 + Math.min(0, legs) * 0.2 })
-      shins.forEach(sh => { sh.rotation.x = Math.max(0, legs) * 0.9 })
+      poseLegs(legPose)
+      // Arme greifen im Flug nach vorn
+      arms.forEach(a => { a.rotation.x += (-Math.max(0, legPose) * 0.9 - a.rotation.x) * Math.min(dt * 12, 1) })
       body.rotation.x = pitch
       frog.position.y = baseY + lift
       frog.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash))
